@@ -33,7 +33,8 @@ npm start
 Electron 43 / NSIS / Resource Hacker
 
 ## 声明
-仅供学习 Electron 打包流程，与洛谷官方无关。
+本项目为个人学习 Electron 打包流程的演示项目，与洛谷官方无任何关联。
+洛谷及其 logo 版权归洛谷所有，请勿用于商业用途。
 
 ## 许可证
 MIT License
