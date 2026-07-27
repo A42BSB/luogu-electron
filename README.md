@@ -27,7 +27,7 @@
 npm install
 npm start
 ```
-需要本机有 Electron 二进制，可用 ELECTRON_OVERRIDE_DIST_SPATH 指定。
+需要本机有 Electron 二进制，可用 ELECTRON_OVERRIDE_DIST_PATH 指定。
 
 ## 项目结构
 ## 技术栈
