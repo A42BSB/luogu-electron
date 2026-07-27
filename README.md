@@ -20,7 +20,7 @@
 ## 使用方式
 
 ### 方式一：安装包（推荐）
-去 Releases 页面下载 `洛谷 Setup x.x.x.exe`，双击安装。
+去 Releases 页面下载 `Setup-x.x.x.x-x64.exe`，双击安装。
 
 ### 方式二：开发者运行
 ```bash
@@ -31,10 +31,12 @@ npm start
 
 ## 项目结构
 ## 技术栈
-Electron 43 / NSIS / Resource Hacker
+Electron / NSIS / Resource Hacker
 
 ## 声明
 仅供学习 Electron 打包流程，与洛谷官方无关。
 
 ## 许可证
 MIT License
+
+以上内容使用Hy3模型生成。
