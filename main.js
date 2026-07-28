@@ -278,7 +278,7 @@ function buildChineseMenu() {
       type: 'info',
       title: '关于洛谷（非官方版）',
       message: '洛谷桌面客户端',
-      detail: '版本：1.0.2.0 (Pre-Release)\n基于 Electron 43\n\n本项目为非官方客户端，仅供学习使用。',
+      detail: '版本：1.0.2 (Pre-Release)\n基于 Electron 43\n\n本项目为非官方客户端，仅供学习使用。',
       buttons: ['确定'],
       icon: nativeImage.createFromPath(path.join(__dirname, 'luogu.ico'))
     })

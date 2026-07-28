@@ -46,6 +46,7 @@ SilentInstall silent
 ; 版本信息（控制面板显示）
 ; ---------------------------
 VIProductVersion "${APP_VERSION}"
+VIAddVersionKey "Release Type" "Pre-Release" ;测试版提示
 VIAddVersionKey "FileDescription" "${APP_NAME} 桌面客户端"
 VIAddVersionKey "ProductName" "${APP_NAME}"
 VIAddVersionKey "CompanyName" "${APP_PUBLISHER}"
