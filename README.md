@@ -39,4 +39,8 @@ Electron / NSIS / Resource Hacker
 ## 许可证
 MIT License
 
+<<<<<<< HEAD
 以上内容使用Hy3模型生成。
+=======
+以上内容使用Hy3模型生成。
+>>>>>>> f8dcee4e1f9f4f360d0b1be9d022dad0a2872082
