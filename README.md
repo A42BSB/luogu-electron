@@ -3,7 +3,7 @@
 基于 Electron 的洛谷桌面客户端，套壳浏览器方案，体验接近网页版，但：
 
 - ✅ 不跳转系统浏览器（右键菜单“使用xx搜索”功能除外）
-- ✅ 新标签页弹新 Electron 窗口
+- ✅ 新标签页弹新窗口
 - ✅ 中文菜单栏
 - ✅ Ctrl+R 刷新
 - ✅ 登录态持久保存
@@ -31,7 +31,7 @@ npm start
 
 ## 项目结构
 ## 技术栈
-Electron / NSIS / Resource Hacker
+[Electron](https://electron.org) / [NSIS](https://github.com/NSIS-Dev/nsis) / [Resource Hacker](https://www.angusj.com/resourcehacker)
 
 ## 声明
 仅供学习 Electron ，与洛谷官方无关。
