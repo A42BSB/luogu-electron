@@ -29,13 +29,15 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "icon.ico"
+      "icon": "luogu.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "artifactName": "洛谷 Setup ${version}.exe",
+      "icon": "luogu.ico"
     }
   }
 }
