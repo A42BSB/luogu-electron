@@ -14,6 +14,8 @@ set ICO_FILE=luogu.ico
 set TRAY_ICO=tray-icon.ico
 set NSIS_SCRIPT=build-installer.nsi
 set ELECTRON_DIST=D:\GitHub\luogu-electron\electron-dist
+set NODE_OPTIONS=--use-system-ca
+set ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 echo ============================================================
 echo   洛谷客户端 一键打包脚本
