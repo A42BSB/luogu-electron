@@ -10,12 +10,15 @@
     "appId": "com.a42bsb.luogu",
     "productName": "洛谷",
     "copyright": "Copyright © 2026 A42BSB",
+    "electronDist": "D:\\GitHub\\luogu-electron\\electron-dist",
+    "electronVersion": "43.2.0",
     "directories": {
       "output": "dist"
     },
     "win": {
       "target": "nsis",
-      "icon": "luogu.ico"
+      "icon": "luogu.ico",
+      "sign": false
     },
     "nsis": {
       "oneClick": false,
