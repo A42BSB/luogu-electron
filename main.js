@@ -2,16 +2,20 @@ const { app, BrowserWindow, Menu, clipboard, shell, globalShortcut } = require('
 const { session } = require('electron')
 
 function createWindow(url) {
+  const path = require('path')
+  const { nativeImage } = require('electron')
+  const appIcon = nativeImage.createFromPath(path.join(__dirname, 'luogu.ico'))
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     title: '洛谷',
+    icon: appIcon,   // ← 关键：任务栏/标题栏图标
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true
-    }
-  })
+  }
+})
 
   win.loadURL(url)
 
@@ -98,15 +102,27 @@ win.webContents.on('context-menu', (_e, params) => {
 function buildChineseMenu() {
   const template = [
     {
-      label: '文件',
-      submenu: [
-        { label: '新建窗口', accelerator: 'CmdOrCtrl+N', click: () => createWindow('https://www.luogu.com.cn') },
-        { type: 'separator' },
-        { label: '关闭窗口', role: 'close' },
-        { type: 'separator' },
-        { label: '退出', role: 'quit' }
-      ]
+  label: '文件',
+  submenu: [
+    { label: '新建窗口', accelerator: 'CmdOrCtrl+N', click: () => createWindow() },
+    { type: 'separator' },
+    {
+      label: '在默认浏览器中打开当前页面',
+      accelerator: 'CmdOrCtrl+Shift+B',
+      click: (item, focusedWindow) => {
+        if (focusedWindow) {
+          const url = focusedWindow.webContents.getURL()
+          const { shell } = require('electron')
+          shell.openExternal(url)
+        }
+      }
     },
+    { type: 'separator' },
+    { label: '关闭窗口', role: 'close' },
+    { type: 'separator' },
+    { label: '退出', role: 'quit' }
+  ]
+},
     {
       label: '编辑',
       submenu: [
@@ -145,8 +161,15 @@ function buildChineseMenu() {
     {
       label: '帮助',
       submenu: [
-        { label: '关于洛谷客户端', role: 'about' },
-        { label: '访问 Electron 官网', click: async () => { const { shell } = require('electron'); await shell.openExternal('https://electronjs.org') } }
+        { label: '关于洛谷客户端（非官方版）', role: 'about' },
+        { label: '访问 Electron 官网', click: async () => { const { shell } = require('electron'); await shell.openExternal('https://electronjs.org') } },
+        { type: 'separator' },
+    {
+      label: '访问本应用的 GitHub 仓库页面',
+      click: () => {
+        shell.openExternal('https://github.com/A42BSB/luogu-electron')
+      }
+    }
       ]
     }
   ]
