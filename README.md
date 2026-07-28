@@ -34,7 +34,7 @@ npm start
 Electron / NSIS / Resource Hacker
 
 ## 声明
-仅供学习 Electron 打包流程，与洛谷官方无关。
+仅供学习 Electron ，与洛谷官方无关。
 
 ## 许可证
 MIT License
