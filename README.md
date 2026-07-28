@@ -2,13 +2,13 @@
 
 基于 Electron 的洛谷桌面客户端，套壳浏览器方案，体验接近网页版，但：
 
-- ✅ 不跳转系统浏览器
+- ✅ 不跳转系统浏览器（右键菜单“使用xx搜索”功能除外）
 - ✅ 新标签页弹新 Electron 窗口
 - ✅ 中文菜单栏
 - ✅ Ctrl+R 刷新
 - ✅ 登录态持久保存
 - ✅ 可打包为 Windows 安装包
-- ❗ 仅适用于 Windows 10 1809及以上版本
+- ❗ 需要Windows 10 1809以上版本
 
 ## 功能特性
 
@@ -20,7 +20,7 @@
 ## 使用方式
 
 ### 方式一：安装包（推荐）
-去 Releases 页面下载 `洛谷 Setup x.x.x.exe`，双击安装。
+去 Releases 页面下载 `Setup-x.x.x.x-x64.exe`，双击安装。
 
 ### 方式二：开发者运行
 ```bash
@@ -31,11 +31,12 @@ npm start
 
 ## 项目结构
 ## 技术栈
-Electron 43 / NSIS / Resource Hacker
+Electron / NSIS / Resource Hacker
 
 ## 声明
-本项目为个人学习 Electron 打包流程的演示项目，与洛谷官方无任何关联。
-洛谷及其 logo 版权归洛谷所有，请勿用于商业用途。
+仅供学习 Electron 打包流程，与洛谷官方无关。
 
 ## 许可证
 MIT License
+
+以上内容使用Hy3模型生成。
