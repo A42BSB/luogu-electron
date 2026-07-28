@@ -1,43 +1,31 @@
 {
   "name": "luogu-electron",
   "version": "1.0.2",
-  "description": "",
+  "description": "洛谷非官方桌面客户端（Pre-Release）",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "electron": "43.2.0",
-    "electron-builder": "^26.15.3"
-  },
   "build": {
-    "appId": "cn.luogu.client",
+    "appId": "com.a42bsb.luogu",
     "productName": "洛谷",
+    "copyright": "Copyright © 2026 A42BSB",
     "directories": {
       "output": "dist"
     },
-    "files": [
-      "main.js",
-      "preload.js",
-      "node_modules/**/*"
-    ],
     "win": {
       "target": "nsis",
       "icon": "luogu.ico"
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "artifactName": "洛谷 Setup ${version}.exe",
-      "icon": "luogu.ico"
+      "artifactName": "洛谷 Setup ${version}.exe"
     }
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
   }
 }
