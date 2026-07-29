@@ -62,7 +62,7 @@ jobs:
       - name: Install dependencies
         shell: pwsh
         run: npm ci
-
+      CSC_IDENTITY_AUTO_DISCOVERY: false
       - name: Build with electron-builder
         shell: pwsh
         run: npm run dist
