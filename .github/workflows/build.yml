@@ -16,11 +16,22 @@ jobs:
       ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
     steps:
+      # ✅ 关键：在 Runner 启动 Node 前清空被污染的 NODE_OPTIONS
+      - name: Clear poisoned NODE_OPTIONS (GitHub Runner bug)
+        shell: pwsh
+        run: |
+          Write-Host "Current NODE_OPTIONS: '$env:NODE_OPTIONS'"
+          $env:NODE_OPTIONS = ""
+          echo "NODE_OPTIONS=" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "NODE_OPTIONS cleared."
+
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
+        env:
+          NODE_OPTIONS: ""   # 仅作用于本 action 的 Node 进程
         with:
           node-version: 20
           cache: npm
@@ -42,7 +53,7 @@ jobs:
           Write-Host "Extracting..."
           Expand-Archive electron-dist.zip -DestinationPath $env:ELECTRON_DIST_PATH
 
-          # ✅ 关键：防止 zip 根目录多套一层文件夹
+          # 防止 zip 根目录多套一层文件夹
           $inner = Get-ChildItem $env:ELECTRON_DIST_PATH -Directory | Select-Object -First 1
           if ($inner) {
             Write-Host "Flattening Electron dist structure..."
@@ -64,10 +75,16 @@ jobs:
           Write-Host "Electron dist verified."
 
       - name: Install dependencies
-        run: npm ci
+        shell: pwsh
+        run: |
+          $env:NODE_OPTIONS = ""
+          npm ci
 
       - name: Build with electron-builder
-        run: npm run dist
+        shell: pwsh
+        run: |
+          $env:NODE_OPTIONS = ""
+          npm run dist
 
       - name: Determine Pre-Release
         id: meta
