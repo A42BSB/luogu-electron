@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Menu, clipboard, shell, Tray, nativeImage, dialog, globalShortcut, session, net } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const { autoUpdater } = require('electron-updater')
 let tray = null
 
 function createWindow(url = 'https://www.luogu.com.cn') {
@@ -278,7 +279,7 @@ function buildChineseMenu() {
       type: 'info',
       title: '关于洛谷（非官方版）',
       message: '洛谷桌面客户端',
-      detail: '版本：1.0.2 (Pre-Release)\n基于 Electron 43\n\n本项目为非官方客户端，仅供学习使用。',
+      detail: '版本：1.0.2.1 (Pre-Release)\n\n你正在使用测试版本，稳定性不佳，出现bug请前往GitHub仓库提交Issue！\n基于 Electron 43\n\n本项目为非官方客户端，仅供学习使用。',
       buttons: ['确定'],
       icon: nativeImage.createFromPath(path.join(__dirname, 'luogu.ico'))
     })
@@ -358,6 +359,33 @@ session.defaultSession.webRequest.onResponseStarted((details) => {
 })
 
   createWindow('https://www.luogu.com.cn')
+  // 仅打包后检查更新，开发期跳过
+if (app.isPackaged) {
+  // Pre-Release 也允许检测到（可选）
+  autoUpdater.allowPrerelease = true
+  autoUpdater.autoDownload = false // 先不自动下，弹窗让用户确认
+  autoUpdater.checkForUpdates()
+
+  autoUpdater.on('update-available', (info) => {
+    const { dialog } = require('electron')
+    dialog.showMessageBox({
+      type: 'info',
+      title: '发现新版本',
+      message: `检测到新版本 ${info.version}\n是否前往下载？`,
+      buttons: ['取消', '打开发布页']
+    }).then(({ response }) => {
+      if (response === 1) {
+        require('electron').shell.openExternal(
+          'https://github.com/A42BSB/luogu-electron/releases'
+        )
+      }
+    })
+  })
+
+  autoUpdater.on('error', (err) => {
+    console.error('[updater]', err.message)
+  })
+}
 })
 
 app.on('window-all-closed', () => {

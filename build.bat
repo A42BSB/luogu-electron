@@ -2,110 +2,129 @@
 setlocal EnableDelayedExpansion
 
 REM ============================================================
-REM 洛谷客户端 - 一键打包脚本
-REM 版本：1.0.2.0 (Pre-Release)
-REM 说明：不清空旧产物 / makensis 已加入 PATH
+REM 洛谷客户端 - 一键打包脚本（electron-updater 兼容版）
+REM 版本：由 package.json 统一维护
+REM 特性：离线构建 / 自动生成 latest.yml / Pre-Release 支持
 REM ============================================================
-set APP_VERSION=1.0.2.0
-set SETUP_NAME=洛谷 Setup %APP_VERSION%.exe
-set DIST_DIR=dist
+
+REM ---------- 基础路径 ----------
+set PROJECT_DIR=D:\GitHub\luogu-electron
+set DIST_DIR=%PROJECT_DIR%\dist
 set UNPACKED_DIR=%DIST_DIR%\win-unpacked
-set ICO_FILE=luogu.ico
-set TRAY_ICO=tray-icon.ico
-set NSIS_SCRIPT=build-installer.nsi
-set ELECTRON_DIST=D:\GitHub\luogu-electron\electron-dist
+set ICO_FILE=%PROJECT_DIR%\luogu.ico
+set TRAY_ICO=%PROJECT_DIR%\tray-icon.ico
+set NSIS_SCRIPT=%PROJECT_DIR%\build-installer.nsi
+
+REM ---------- Electron 离线环境 ----------
+set ELECTRON_DIST=%PROJECT_DIR%\electron-dist
+set ELECTRON_BUILDER_BINARIES_MIRROR=
+set ELECTRON_BUILDER_CACHE=C:\Users\1ir_b\AppData\Local\electron-builder\cache
+
+REM ---------- Node.js / Builder 行为 ----------
 set NODE_OPTIONS=--use-system-ca
 set ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
+REM ---------- 进入项目目录（防止在 System32 执行）----------
+cd /d %PROJECT_DIR%
+if not exist "package.json" (
+    echo [致命错误] 当前目录不是项目根目录：
+    echo            %CD%
+    pause
+    exit /b 1
+)
+
+REM ---------- 读取版本号（从 package.json）----------
+for /f "tokens=2 delims=:, " %%a in ('findstr "\"version\":" package.json') do (
+    set APP_VERSION=%%~a
+)
+set APP_VERSION=%APP_VERSION:"=%
+
 echo ============================================================
-echo   洛谷客户端 一键打包脚本
-echo   版本：%APP_VERSION% (Pre-Release)
+echo   洛谷客户端 - 一键打包脚本
+echo   版本：%APP_VERSION%
+echo   模式：离线构建（electron-updater 兼容）
 echo ============================================================
 echo.
 
-REM ------------------------------------------------------------
-REM 1. 检查 Electron 离线路径
-REM ------------------------------------------------------------
-echo [1/5] 检查 Electron 离线路径...
+REM ---------- 1. 清理旧产物 ----------
+echo [1/6] 清理旧的打包产物...
+if exist %DIST_DIR% (
+    rmdir /s /q %DIST_DIR%
+)
+echo        OK
+echo.
+
+REM ---------- 2. 校验关键文件 ----------
+echo [2/6] 校验关键文件...
 if not exist "%ELECTRON_DIST%\electron.exe" (
-    echo [错误] Electron 离线路径不存在：
+    echo [错误] Electron 离线目录缺失：
     echo        %ELECTRON_DIST%
     pause
     exit /b 1
 )
+if not exist "%ICO_FILE%" (
+    echo [错误] luogu.ico 不存在
+    pause
+    exit /b 1
+)
 echo        OK
 echo.
 
-REM ------------------------------------------------------------
-REM 2. 设置环境变量并打包 Electron 应用
-REM （不清空旧产物，按你的要求）
-REM ------------------------------------------------------------
-echo [2/5] 打包 Electron 应用（生成 / 更新 win-unpacked）...
-set ELECTRON_OVERRIDE_DIST_PATH=%ELECTRON_DIST%
+REM ---------- 3. electron-builder 打包 ----------
+echo [3/6] 执行 electron-builder（离线模式）...
 call npm run dist
 if errorlevel 1 (
-    echo [错误] Electron 打包失败，请检查 npm 日志
+    echo [错误] Electron 打包失败
     pause
     exit /b 1
 )
-if not exist "%UNPACKED_DIR%\luogu.exe" (
-    echo [错误] win-unpacked\luogu.exe 未生成
-    pause
-    exit /b 1
-)
-echo        OK
-echo.
-
-REM ------------------------------------------------------------
-REM 3. 复制资源文件到 win-unpacked
-REM ------------------------------------------------------------
-echo [3/5] 复制资源文件（ico / tray-icon）...
-copy /y %ICO_FILE% %UNPACKED_DIR%\%ICO_FILE% >nul
-if not exist "%UNPACKED_DIR%\%ICO_FILE%" (
-    echo [警告] 复制 %ICO_FILE% 失败
-)
-if exist %TRAY_ICO% (
-    copy /y %TRAY_ICO% %UNPACKED_DIR%\%TRAY_ICO% >nul
-)
-echo        OK
-echo.
-
-REM ------------------------------------------------------------
-REM 4. 编译 NSIS 安装包（makensis 已在 PATH）
-REM ------------------------------------------------------------
-echo [4/5] 编译 NSIS 安装包（%SETUP_NAME%）...
-makensis.exe %NSIS_SCRIPT%
-if errorlevel 1 (
-    echo [错误] NSIS 编译失败，请检查脚本编码是否为 GBK
-    pause
-    exit /b 1
-)
-if not exist "%DIST_DIR%\%SETUP_NAME%" (
-    echo [错误] 安装包未生成：%SETUP_NAME%
+if not exist "%UNPACKED_DIR%\洛谷.exe" (
+    echo [错误] win-unpacked\洛谷.exe 未生成
     pause
     exit /b 1
 )
 echo        OK
 echo.
 
-REM ------------------------------------------------------------
-REM 5. 完成
-REM ------------------------------------------------------------
+REM ---------- 4. 复制运行时资源 ----------
+echo [4/6] 复制运行时资源（ico / tray-icon）...
+copy /y "%ICO_FILE%" "%UNPACKED_DIR%\luogu.ico" >nul
+if exist "%TRAY_ICO%" (
+    copy /y "%TRAY_ICO%" "%UNPACKED_DIR%\tray-icon.ico" >nul
+)
+echo        OK
+echo.
+
+REM ---------- 5. 编译 NSIS 安装包 ----------
+echo [5/6] 编译 NSIS 安装包...
+if exist "%NSIS_SCRIPT%" (
+    makensis.exe "%NSIS_SCRIPT%"
+    if errorlevel 1 (
+        echo [错误] NSIS 编译失败
+        pause
+        exit /b 1
+    )
+) else (
+    echo [警告] NSIS 脚本不存在，跳过安装包构建
+)
+echo        OK
+echo.
+
+REM ---------- 6. 构建完成 ----------
 echo ============================================================
 echo   打包完成！
 echo ============================================================
-echo   版本号：       %APP_VERSION% (Pre-Release)
-echo   安装包：       %DIST_DIR%\%SETUP_NAME%
-echo   绿色版：       %UNPACKED_DIR%\luogu.exe
+echo   版本号：       %APP_VERSION%
+echo   安装包：       %DIST_DIR%\洛谷 Setup %APP_VERSION%.exe
+echo   绿色版：       %UNPACKED_DIR%\洛谷.exe
+echo   更新元数据：   %DIST_DIR%\latest.yml
 echo.
-echo   注意事项：
-echo   - 旧 dist 产物未被清理（按你的要求）
-echo   - 若安装包体积异常，请检查 win-unpacked 是否被重复拷贝
-echo.
-echo   下一步建议：
-echo   1. 测试安装 / 卸载
-echo   2. 检查关于对话框版本号
-echo   3. GitHub 发布 Pre-Release
+echo   后续步骤：
+echo   1. 测试安装包是否正常安装 / 卸载
+echo   2. 确认关于对话框版本号
+echo   3. GitHub Release 上传以下文件：
+echo      - 洛谷 Setup %APP_VERSION%.exe
+echo      - latest.yml
 echo ============================================================
 echo.
 pause
