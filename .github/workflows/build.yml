@@ -1,5 +1,8 @@
 name: Build Windows Release
 
+env:
+  NODE_OPTIONS: ""
+
 on:
   push:
     tags:
