@@ -14,16 +14,8 @@ jobs:
       ELECTRON_DIST_ZIP_URL: https://repo.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip
       ELECTRON_DIST_PATH: ${{ github.workspace }}\electron-dist
       ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-      NODE_OPTIONS: ""
 
     steps:
-      - name: Clear poisoned NODE_OPTIONS (Runner bug)
-        shell: pwsh
-        run: |
-          Write-Host "Clearing NODE_OPTIONS..."
-          $env:NODE_OPTIONS = ""
-          Write-Host "NODE_OPTIONS cleared."
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -46,17 +38,14 @@ jobs:
         run: |
           Write-Host "Cache miss, downloading Electron from HuaweiCloud..."
           Invoke-WebRequest -Uri $env:ELECTRON_DIST_ZIP_URL -OutFile electron-dist.zip
-
           Write-Host "Extracting..."
           Expand-Archive electron-dist.zip -DestinationPath $env:ELECTRON_DIST_PATH
-
           $inner = Get-ChildItem $env:ELECTRON_DIST_PATH -Directory | Select-Object -First 1
           if ($inner) {
             Write-Host "Flattening Electron dist structure..."
             Move-Item "$inner\*" $env:ELECTRON_DIST_PATH -Force
             Remove-Item $inner -Recurse -Force
           }
-
           Remove-Item electron-dist.zip
           Write-Host "Electron dist ready."
 
@@ -72,15 +61,11 @@ jobs:
 
       - name: Install dependencies
         shell: pwsh
-        run: |
-          $env:NODE_OPTIONS = ""
-          npm ci
+        run: npm ci
 
       - name: Build with electron-builder
         shell: pwsh
-        run: |
-          $env:NODE_OPTIONS = ""
-          npm run dist
+        run: npm run dist
 
       - name: Determine Pre-Release
         id: meta
