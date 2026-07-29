@@ -1,8 +1,5 @@
 name: Build Windows Release
 
-env:
-  NODE_OPTIONS: ""
-
 on:
   push:
     tags:
@@ -17,7 +14,6 @@ jobs:
       ELECTRON_DIST_ZIP_URL: https://repo.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip
       ELECTRON_DIST_PATH: ${{ github.workspace }}\electron-dist
       ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-      NODE_OPTIONS: --use-system-ca
 
     steps:
       - name: Checkout
