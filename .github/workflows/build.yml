@@ -1,0 +1,92 @@
+name: Build Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    env:
+      ELECTRON_DIST_ZIP_URL: https://repo.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip
+      ELECTRON_DIST_PATH: ${{ github.workspace }}\electron-dist
+      ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+      NODE_OPTIONS: --use-system-ca
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Cache Electron Dist
+        id: cache-electron
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.ELECTRON_DIST_PATH }}
+          key: electron-dist-43.2.0-win-x64
+
+      - name: Download Electron Dist (if not cached)
+        if: steps.cache-electron.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Write-Host "Cache miss, downloading Electron from HuaweiCloud..."
+          Invoke-WebRequest -Uri $env:ELECTRON_DIST_ZIP_URL -OutFile electron-dist.zip
+
+          Write-Host "Extracting..."
+          Expand-Archive electron-dist.zip -DestinationPath $env:ELECTRON_DIST_PATH
+
+          # ✅ 关键：防止 zip 根目录多套一层文件夹
+          $inner = Get-ChildItem $env:ELECTRON_DIST_PATH -Directory | Select-Object -First 1
+          if ($inner) {
+            Write-Host "Flattening Electron dist structure..."
+            Move-Item "$inner\*" $env:ELECTRON_DIST_PATH -Force
+            Remove-Item $inner -Recurse -Force
+          }
+
+          Remove-Item electron-dist.zip
+          Write-Host "Electron dist ready."
+
+      - name: Verify Electron Dist
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:ELECTRON_DIST_PATH "electron.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Error "electron.exe not found!"
+            exit 1
+          }
+          Write-Host "Electron dist verified."
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with electron-builder
+        run: npm run dist
+
+      - name: Determine Pre-Release
+        id: meta
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" == *-pre* || "$TAG" == *-beta* || "$TAG" == *-alpha* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          files: |
+            dist/洛谷 Setup *.exe
+            dist/latest.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
