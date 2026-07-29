@@ -4,7 +4,7 @@
 ; ============================================
 
 !define APP_NAME "Ве№И"
-!define APP_VERSION "1.0.2.1"
+!define APP_VERSION "1.0.2.3"
 !define APP_PUBLISHER "LuoguClient"
 !define APP_EXE "luogu.exe"
 !define SOURCE_DIR "dist\win-unpacked"
