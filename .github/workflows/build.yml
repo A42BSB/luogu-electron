@@ -1,16 +1,18 @@
 name: Build Windows Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    # 👇 关键：改用 windows-2022，避开 windows-latest 的新 Runner
+    runs-on: windows-2022
 
     env:
+      # 👇 保留你的 Electron 配置
       ELECTRON_DIST_ZIP_URL: https://repo.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip
       ELECTRON_DIST_PATH: ${{ github.workspace }}\electron-dist
       ELECTRON_SKIP_BINARY_DOWNLOAD: 1
@@ -42,7 +44,7 @@ jobs:
           Write-Host "Extracting..."
           Expand-Archive electron-dist.zip -DestinationPath $env:ELECTRON_DIST_PATH
 
-          # ✅ 关键：防止 zip 根目录多套一层文件夹
+          # 防止 zip 根目录多套一层文件夹
           $inner = Get-ChildItem $env:ELECTRON_DIST_PATH -Directory | Select-Object -First 1
           if ($inner) {
             Write-Host "Flattening Electron dist structure..."
@@ -64,9 +66,11 @@ jobs:
           Write-Host "Electron dist verified."
 
       - name: Install dependencies
+        shell: pwsh
         run: npm ci
 
       - name: Build with electron-builder
+        shell: pwsh
         run: npm run dist
 
       - name: Determine Pre-Release
