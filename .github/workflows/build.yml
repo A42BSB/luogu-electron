@@ -8,16 +8,22 @@ on:
 
 jobs:
   build-windows:
-    # 👇 关键：改用 windows-2022，避开 windows-latest 的新 Runner
     runs-on: windows-2022
 
     env:
-      # 👇 保留你的 Electron 配置
       ELECTRON_DIST_ZIP_URL: https://repo.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip
       ELECTRON_DIST_PATH: ${{ github.workspace }}\electron-dist
       ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+      NODE_OPTIONS: ""
 
     steps:
+      - name: Clear poisoned NODE_OPTIONS (Runner bug)
+        shell: pwsh
+        run: |
+          Write-Host "Clearing NODE_OPTIONS..."
+          $env:NODE_OPTIONS = ""
+          Write-Host "NODE_OPTIONS cleared."
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -44,7 +50,6 @@ jobs:
           Write-Host "Extracting..."
           Expand-Archive electron-dist.zip -DestinationPath $env:ELECTRON_DIST_PATH
 
-          # 防止 zip 根目录多套一层文件夹
           $inner = Get-ChildItem $env:ELECTRON_DIST_PATH -Directory | Select-Object -First 1
           if ($inner) {
             Write-Host "Flattening Electron dist structure..."
@@ -67,11 +72,15 @@ jobs:
 
       - name: Install dependencies
         shell: pwsh
-        run: npm ci
+        run: |
+          $env:NODE_OPTIONS = ""
+          npm ci
 
       - name: Build with electron-builder
         shell: pwsh
-        run: npm run dist
+        run: |
+          $env:NODE_OPTIONS = ""
+          npm run dist
 
       - name: Determine Pre-Release
         id: meta
