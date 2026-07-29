@@ -18,7 +18,8 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "luogu.ico"
+      "icon": "luogu.ico",
+      "executableName": "luogu"
     },
     "nsis": {
       "oneClick": false,
