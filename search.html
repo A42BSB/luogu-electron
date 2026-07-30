@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>搜题</title>
+<style>
+  body {
+    margin: 0;
+    padding: 22px 24px;
+    font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 14px;
+    background: #ffffff;
+    user-select: none;
+  }
+  .row {
+    margin-bottom: 14px;
+  }
+  label {
+    display: block;
+    margin-bottom: 6px;
+    color: #222;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #999;
+    border-radius: 2px;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+  }
+  input[type="text"]:focus {
+    border-color: #0078d7;
+  }
+  .radio-group {
+    margin: 16px 0 24px;
+  }
+  .radio-group label {
+    margin-right: 24px;
+    cursor: pointer;
+  }
+  .actions {
+    text-align: right;
+  }
+  button {
+    padding: 6px 18px;
+    margin-left: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    border: 1px solid #aaa;
+    border-radius: 2px;
+    background: #f0f0f0;
+    cursor: pointer;
+  }
+  button.confirm {
+    background: #0078d7;
+    color: #fff;
+    border-color: #0078d7;
+  }
+</style>
+</head>
+<body>
+
+<div class="row">
+  <label>关键词</label>
+  <input id="kw" type="text" placeholder="算法、标题或题目编号">
+</div>
+
+<div class="radio-group">
+  <label><input type="radio" name="t" value="problem" checked> 题库</label>
+  <label><input type="radio" name="t" value="training"> 用户题单</label>
+</div>
+
+<div class="actions">
+  <button id="cancel">取消</button>
+  <button class="confirm" id="ok">确定</button>
+</div>
+
+<script>
+const { ipcRenderer } = require('electron')
+const input = document.getElementById('kw')
+
+/* ===== 自动聚焦（npm start 下最关键）===== */
+window.addEventListener('DOMContentLoaded', () => {
+  input.focus()
+})
+
+/* ===== 输入框右键菜单 ===== */
+input.addEventListener('contextmenu', (e) => {
+  e.preventDefault()
+  ipcRenderer.send('show-search-context-menu')
+})
+
+/* ===== 接收主进程菜单命令 ===== */
+ipcRenderer.on('search-context-menu-command', (_, cmd) => {
+  switch (cmd) {
+    case 'undo': document.execCommand('undo'); break
+    case 'redo': document.execCommand('redo'); break
+    case 'cut': document.execCommand('cut'); break
+    case 'copy': document.execCommand('copy'); break
+    case 'paste': document.execCommand('paste'); break
+    case 'selectAll': input.select(); break
+  }
+})
+
+/* ===== 确定 ===== */
+function submit() {
+  const raw = input.value.trim()
+  if (!raw) {
+    input.focus()
+    return
+  }
+  const kw = encodeURIComponent(raw)
+  const t = document.querySelector('input[name="t"]:checked').value
+  const url = t === 'problem'
+    ? 'https://www.luogu.com.cn/problem/list?type=all&keyword=' + kw
+    : 'https://www.luogu.com.cn/training/list?type=select&keyword=' + kw
+
+  // ✅ 只发 IPC，不自己关窗口
+  ipcRenderer.send('open-search-url', url)
+}
+
+document.getElementById('ok').onclick = submit
+
+document.getElementById('cancel').onclick = () => {
+  ipcRenderer.send('close-search-window')
+}
+
+/* ===== Enter 确认 ===== */
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    submit()
+  }
+})
+</script>
+
+</body>
+</html>

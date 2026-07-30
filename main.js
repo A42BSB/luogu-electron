@@ -1,8 +1,28 @@
-const { app, BrowserWindow, Menu, clipboard, shell, Tray, nativeImage, dialog, globalShortcut, session, net } = require('electron')
+const { app, BrowserWindow, Menu, clipboard, shell, Tray, nativeImage, dialog, globalShortcut, session, net, ipcMain } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const configPath = path.join(app.getPath('userData'), 'config.json')
 
 let tray = null
+let searchWin = null
+
+function loadConfig() {
+  try {
+    if (fs.existsSync(configPath)) {
+      return JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+    }
+  } catch (_) {}
+  return {
+    searchOpenMode: 'external' // external | new | current
+  }
+}
+
+function saveConfig(config) {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
+  } catch (_) {}
+}
+let config = loadConfig()
 
 function createWindow(url = 'https://www.luogu.com.cn') {
   const statePath = path.join(app.getPath('userData'), 'window-state.json')
@@ -65,6 +85,66 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     return { action: 'deny' }
   })
 
+  // 右键菜单
+  win.webContents.on('context-menu', (_e, params) => {
+    const template = []
+
+    if (params.selectionText && params.selectionText.trim()) {
+      template.push(
+        { label: '复制', role: 'copy' },
+        { type: 'separator' },
+        {
+          label: `使用百度搜索“${params.selectionText.slice(0, 12)}…”`,
+          click: () => shell.openExternal(
+            'https://www.baidu.com/s?wd=' + encodeURIComponent(params.selectionText)
+          )
+        }
+      )
+    }
+
+    if (params.linkURL && params.linkURL.startsWith('https://www.luogu.com.cn')) {
+      template.push(
+        { type: 'separator' },
+        { label: '在新窗口打开', click: () => createWindow(params.linkURL) },
+        { label: '复制链接地址', click: () => clipboard.writeText(params.linkURL) }
+      )
+    }
+
+    if (params.mediaType === 'image') {
+      template.push(
+        { type: 'separator' },
+        { label: '复制图片', click: () => win.webContents.copyImageAt(params.x, params.y) },
+        { label: '复制图片地址', click: () => clipboard.writeText(params.srcURL) }
+      )
+    }
+
+    if (params.isEditable) {
+      template.push(
+        { label: '剪切', role: 'cut' },
+        { label: '复制', role: 'copy' },
+        { label: '粘贴', role: 'paste' },
+        { type: 'separator' },
+        { label: '全选', role: 'selectAll' }
+      )
+    }
+
+    if (template.length === 0) {
+      template.push(
+        { label: '刷新', role: 'reload' },
+        { label: '实际大小', role: 'resetZoom' },
+        { label: '放大', role: 'zoomIn' },
+        { label: '缩小', role: 'zoomOut' }
+      )
+    }
+
+    template.push(
+      { type: 'separator' },
+      { label: '检查元素', click: () => win.webContents.inspectElement(params.x, params.y) }
+    )
+
+    Menu.buildFromTemplate(template).popup({ window: win })
+  })
+
   win.on('close', (e) => {
     if (!app.isQuitting) {
       e.preventDefault()
@@ -119,65 +199,102 @@ function createTray() {
 }
 
 function openSearchDialog() {
-  const win = new BrowserWindow({
+  if (searchWin) {
+    searchWin.focus()
+    return
+  }
+
+  searchWin = new BrowserWindow({
     width: 420,
-    height: 220,
+    height: 260,
     resizable: false,
     modal: true,
     parent: BrowserWindow.getFocusedWindow(),
+    autoHideMenuBar: true, // 关键：无菜单栏
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     },
-    title: '搜题',
     icon: nativeImage.createFromPath(path.join(__dirname, 'luogu.ico'))
   })
 
-  const html = `
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<style>
-body { font-family: Microsoft YaHei, sans-serif; padding: 18px; background: #f4f4f4; }
-input { width: 100%; padding: 6px; box-sizing: border-box; border: 1px solid #bbb; border-radius: 3px; }
-.radio { margin: 12px 0; }
-.radio label { margin-right: 16px; }
-.actions { text-align: right; margin-top: 16px; }
-button { padding: 5px 14px; margin-left: 8px; border: 1px solid #aaa; border-radius: 3px; background: #fff; cursor: pointer; }
-button.confirm { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
-</style>
-</head>
-<body>
-<div>关键词</div>
-<input id="kw" placeholder="算法、标题或题目编号">
-<div class="radio">
-  <label><input type="radio" name="t" value="problem" checked> 题库</label>
-  <label><input type="radio" name="t" value="training"> 用户题单</label>
-</div>
-<div class="actions">
-  <button id="cancel">取消</button>
-  <button class="confirm" id="ok">确定</button>
-</div>
-<script>
-const { shell } = require('electron')
-document.getElementById('ok').onclick = () => {
-  const kw = encodeURIComponent(document.getElementById('kw').value.trim())
-  const t = document.querySelector('input[name="t"]:checked').value
-  if (!kw) return
-  const url = t === 'problem'
-    ? 'https://www.luogu.com.cn/problem/list?type=all&keyword=' + kw
-    : 'https://www.luogu.com.cn/training/list?type=select&keyword=' + kw
-  shell.openExternal(url)
-  window.close()
-}
-document.getElementById('cancel').onclick = () => window.close()
-</script>
-</body>
-</html>`
+  searchWin.loadFile('search.html')
 
-  win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+  searchWin.on('closed', () => {
+    searchWin = null
+  })
 }
+
+ipcMain.on('show-search-context-menu', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (!win) return
+
+  const template = [
+    { label: '撤销', role: 'undo' },
+    { label: '重做', role: 'redo' },
+    { type: 'separator' },
+    { label: '剪切', role: 'cut' },
+    { label: '复制', role: 'copy' },
+    { label: '粘贴', role: 'paste' },
+    { type: 'separator' },
+    { label: '全选', role: 'selectAll' }
+  ]
+
+  const menu = Menu.buildFromTemplate(template)
+  menu.popup({ window: win })
+})
+
+ipcMain.on('open-search-url', (_, url) => {
+  const mode = config.searchOpenMode || 'external'
+
+  if (mode === 'external') {
+    shell.openExternal(url)
+  }
+  else if (mode === 'new') {
+    // 1先关搜题窗口（避免它抢焦点）
+    if (searchWin) {
+      searchWin.close()
+      searchWin = null
+    }
+
+    // 2创建新窗口
+    const win = new BrowserWindow({
+      width: 1280,
+      height: 800,
+      title: '洛谷',
+      icon: nativeImage.createFromPath(path.join(__dirname, 'luogu.ico')),
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true
+      },
+      show: false // 关键：先不显示
+    })
+
+    // 3页面准备好后再显示 + 强制聚焦
+    win.once('ready-to-show', () => {
+      win.show()
+      win.focus()
+      win.moveTop()
+    })
+
+    win.loadURL(url)
+  }
+  else if (mode === 'current') {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) {
+      win.loadURL(url)
+      win.show()
+      win.focus()
+    }
+  }
+})
+
+ipcMain.on('close-search-window', () => {
+  if (searchWin) {
+    searchWin.close()
+  }
+})
 
 function buildMenu() {
   const isPrerelease = app.getVersion().includes('-')
@@ -364,8 +481,8 @@ app.whenReady().then(() => {
       dialog.showMessageBox({
         type: 'info',
         title: '发现新版本',
-        message: `新版本：${info.version}\n是否打开发布页？`,
-        buttons: ['取消', '打开']
+        message: `新版本：${info.updateInfo.version}\n是否打开发布页？`,
+        buttons: ['Cancel', '打开']
       }).then(res => {
         if (res.response === 1) shell.openExternal('https://github.com/A42BSB/luogu-electron/releases')
       })
