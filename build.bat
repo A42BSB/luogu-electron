@@ -80,6 +80,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+copy /y "%DIST_DIR%\latest.yml" "%DIST_DIR%\latest-x64.yml"
 echo        OK
 echo.
 
@@ -91,6 +92,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+copy /y "%DIST_DIR%\latest.yml" "%DIST_DIR%\latest-arm64.yml"
 echo        OK
 echo.
 
