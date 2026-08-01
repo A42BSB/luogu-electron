@@ -42,4 +42,8 @@
 
 ## License
 
-MIT
+[MIT](https://github.com/A42Null/luogu-electron/blob/main/LICENSE)
+
+以上内容使用Hy3润色。
+
+根据 https://www.luogu.com.cn/discuss/1337298 ，此应用并非“高科技”，只不过是个“经过加工的浏览器（[electron](https://electronjs.org)）”。
