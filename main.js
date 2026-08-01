@@ -393,7 +393,7 @@ function buildMenu() {
                 message: `新版本：${info.updateInfo.version}\n是否打开发布页？`,
                 buttons: ['取消', '打开']
               }).then(res => {
-                if (res.response === 1) shell.openExternal('https://github.com/A42BSB/luogu-electron/releases')
+                if (res.response === 1) shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
               })
             }).catch(() => {
               dialog.showMessageBox({ type: 'error', title: '检查更新失败', message: '无法连接更新服务器', buttons: ['确定'] })
@@ -419,7 +419,7 @@ function buildMenu() {
                   message: `测试版本：${info.updateInfo.version}\n是否打开发布页？`,
                   buttons: ['取消', '打开']
                 }).then(res => {
-                  if (res.response === 1) shell.openExternal('https://github.com/A42BSB/luogu-electron/releases')
+                  if (res.response === 1) shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
                 })
               }).catch(() => {
                 dialog.showMessageBox({ type: 'error', title: '更新失败', message: '无法连接更新服务器', buttons: ['确定'] })
@@ -430,7 +430,7 @@ function buildMenu() {
         { type: 'separator' },
         {
           label: 'GitHub 仓库',
-          click: () => shell.openExternal('https://github.com/A42BSB/luogu-electron')
+          click: () => shell.openExternal('https://github.com/A42Null/luogu-electron')
         }
       ]
     }
@@ -484,7 +484,7 @@ app.whenReady().then(() => {
         message: `新版本：${info.updateInfo.version}\n是否打开发布页？`,
         buttons: ['Cancel', '打开']
       }).then(res => {
-        if (res.response === 1) shell.openExternal('https://github.com/A42BSB/luogu-electron/releases')
+        if (res.response === 1) shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
       })
     })
   }

@@ -30,7 +30,7 @@ function checkForUpdates(allowPrerelease = false) {
       }).then(({ response }) => {
         if (response === 1) {
           require('electron').shell.openExternal(
-            'https://github.com/A42BSB/luogu-electron/releases'
+            'https://github.com/A42Null/luogu-electron/releases'
           )
         }
       })

@@ -2,16 +2,16 @@
   "name": "luogu-electron",
   "version": "1.0.2-pre.4",
   "description": "洛谷非官方桌面客户端（Pre-Release）",
-  "author": "A42BSB",
+  "author": "A42Null",
   "main": "main.js",
   "scripts": {
     "dist": "electron-builder",
     "start": "electron ."
   },
   "build": {
-    "appId": "com.a42bsb.luogu",
+    "appId": "com.a42null.luogu",
     "productName": "洛谷",
-    "copyright": "Copyright © 2026 A42BSB",
+    "copyright": "Copyright © 2026 A42Null",
     "electronVersion": "43.2.0",
     "directories": {
       "output": "dist"
@@ -29,7 +29,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "A42BSB",
+      "owner": "A42Null",
       "repo": "luogu-electron"
     }
   },
