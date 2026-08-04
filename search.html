@@ -1,3 +1,5 @@
+<!-- TECH-DEBT: 搜题窗口唯一允许 nodeIntegration 的入口 -->
+<!-- 仅用于 IPC，不包含任何业务逻辑 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -12,14 +14,8 @@
     background: #ffffff;
     user-select: none;
   }
-  .row {
-    margin-bottom: 14px;
-  }
-  label {
-    display: block;
-    margin-bottom: 6px;
-    color: #222;
-  }
+  .row { margin-bottom: 14px; }
+  label { display: block; margin-bottom: 6px; color: #222; }
   input[type="text"] {
     width: 100%;
     padding: 6px 8px;
@@ -30,19 +26,10 @@
     outline: none;
     box-sizing: border-box;
   }
-  input[type="text"]:focus {
-    border-color: #0078d7;
-  }
-  .radio-group {
-    margin: 16px 0 24px;
-  }
-  .radio-group label {
-    margin-right: 24px;
-    cursor: pointer;
-  }
-  .actions {
-    text-align: right;
-  }
+  input[type="text"]:focus { border-color: #0078d7; }
+  .radio-group { margin: 16px 0 24px; }
+  .radio-group label { margin-right: 24px; cursor: pointer; }
+  .actions { text-align: right; }
   button {
     padding: 6px 18px;
     margin-left: 10px;
@@ -79,50 +66,33 @@
 
 <script>
 const { ipcRenderer } = require('electron')
+
 const input = document.getElementById('kw')
 
-/* ===== 自动聚焦（npm start 下最关键）===== */
-window.addEventListener('DOMContentLoaded', () => {
-  input.focus()
-})
+/* ===== 自动聚焦 ===== */
+window.addEventListener('DOMContentLoaded', () => input.focus())
 
-/* ===== 输入框右键菜单 ===== */
+/* ===== 输入框右键菜单（纯 IPC，无 Node 泄漏）===== */
 input.addEventListener('contextmenu', (e) => {
   e.preventDefault()
-  ipcRenderer.send('show-search-context-menu')
-})
-
-/* ===== 接收主进程菜单命令 ===== */
-ipcRenderer.on('search-context-menu-command', (_, cmd) => {
-  switch (cmd) {
-    case 'undo': document.execCommand('undo'); break
-    case 'redo': document.execCommand('redo'); break
-    case 'cut': document.execCommand('cut'); break
-    case 'copy': document.execCommand('copy'); break
-    case 'paste': document.execCommand('paste'); break
-    case 'selectAll': input.select(); break
-  }
+  ipcRenderer.send('show-search-context-menu', { x: e.x, y: e.y })
 })
 
 /* ===== 确定 ===== */
 function submit() {
   const raw = input.value.trim()
-  if (!raw) {
-    input.focus()
-    return
-  }
+  if (!raw) return input.focus()
+
   const kw = encodeURIComponent(raw)
   const t = document.querySelector('input[name="t"]:checked').value
   const url = t === 'problem'
     ? 'https://www.luogu.com.cn/problem/list?type=all&keyword=' + kw
     : 'https://www.luogu.com.cn/training/list?type=select&keyword=' + kw
 
-  // ✅ 只发 IPC，不自己关窗口
   ipcRenderer.send('open-search-url', url)
 }
 
 document.getElementById('ok').onclick = submit
-
 document.getElementById('cancel').onclick = () => {
   ipcRenderer.send('close-search-window')
 }

@@ -46,4 +46,5 @@
 
 以上内容使用Hy3润色。
 
-根据 https://www.luogu.com.cn/discuss/1337298 ，此应用并非“高科技”，只不过是个“经过加工的浏览器（[electron](https://electronjs.org)）”。
+根据 https://www.luogu.com.cn/discuss/1337298 ，此应用并非“高科技”，只不过是个“经过加工的浏览器（[electron](https://electronjs.org)）”。  
+`1.0.2-alpha.5`版本及以后的应用图标为作者自行绘制，未使用洛谷官方美术资源或商标，与洛谷官方无关。

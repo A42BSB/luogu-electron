@@ -37,7 +37,7 @@ function createWindow(url = 'https://www.luogu.com.cn') {
   const win = new BrowserWindow({
     ...state,
     title: '洛谷',
-    icon: nativeImage.createFromPath(path.join(__dirname, 'luogu.ico')),
+    icon: nativeImage.createFromPath(path.join(__dirname, 'icon.ico')),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -215,7 +215,7 @@ function openSearchDialog() {
       nodeIntegration: true,
       contextIsolation: false
     },
-    icon: nativeImage.createFromPath(path.join(__dirname, 'luogu.ico'))
+    icon: nativeImage.createFromPath(path.join(__dirname, 'icon.ico'))
   })
 
   searchWin.loadFile('search.html')
@@ -241,7 +241,7 @@ ipcMain.on('show-search-context-menu', (event) => {
   ]
 
   const menu = Menu.buildFromTemplate(template)
-  menu.popup({ window: win })
+  menu.popup({ window: win, x, y })
 })
 
 ipcMain.on('open-search-url', (_, url) => {
@@ -262,7 +262,7 @@ ipcMain.on('open-search-url', (_, url) => {
       width: 1280,
       height: 800,
       title: '洛谷',
-      icon: nativeImage.createFromPath(path.join(__dirname, 'luogu.ico')),
+      icon: nativeImage.createFromPath(path.join(__dirname, 'icon.ico')),
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -370,7 +370,7 @@ function buildMenu() {
               message: '洛谷客户端（非官方）',
               detail: `版本：${app.getVersion()}\n基于 Electron\n仅供学习使用`,
               buttons: ['确定'],
-              icon: nativeImage.createFromPath(path.join(__dirname, 'luogu.ico'))
+              icon: nativeImage.createFromPath(path.join(__dirname, 'icon.ico'))
             })
           }
         },

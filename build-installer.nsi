@@ -4,7 +4,7 @@
 ; ============================================
 
 !define APP_NAME "Ве№И"
-!define APP_VERSION "1.0.2.3"
+!define APP_VERSION "1.0.2.5"
 !define APP_PUBLISHER "LuoguClient"
 !define APP_EXE "luogu.exe"
 !define SOURCE_DIR "dist\win-unpacked"
@@ -24,8 +24,8 @@ SilentInstall silent
 ; ---------------------------
 !include "MUI2.nsh"
 !define MUI_ABORTWARNING
-!define MUI_ICON "luogu.ico"
-!define MUI_UNICON "luogu.ico"
+!define MUI_ICON "icon.ico"
+!define MUI_UNICON "icon.ico"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY

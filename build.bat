@@ -8,7 +8,7 @@ REM ============================================================
 REM ---------- 基础路径 ----------
 set PROJECT_DIR=D:\GitHub\luogu-electron
 set DIST_DIR=%PROJECT_DIR%\dist
-set ICO_FILE=%PROJECT_DIR%\luogu.ico
+set ICO_FILE=%PROJECT_DIR%\icon.ico
 set NSIS_SCRIPT=%PROJECT_DIR%\build-installer.nsi
 
 REM ---------- Electron 离线目录 ----------
@@ -65,7 +65,7 @@ if not exist "%ELECTRON_DIST_ARM64%\electron.exe" (
     exit /b 1
 )
 if not exist "%ICO_FILE%" (
-    echo [错误] luogu.ico 不存在
+    echo [错误] icon.ico 不存在
     pause
     exit /b 1
 )
@@ -99,7 +99,7 @@ echo.
 REM ---------- 5. 复制运行时资源 ----------
 echo [5/7] 复制运行时资源...
 if exist "%DIST_DIR%\win-unpacked" (
-    copy /y "%ICO_FILE%" "%DIST_DIR%\win-unpacked\luogu.ico" >nul
+    copy /y "%ICO_FILE%" "%DIST_DIR%\win-unpacked\icon.ico" >nul
 )
 if exist "%PROJECT_DIR%\tray-icon.ico" (
     copy /y "%PROJECT_DIR%\tray-icon.ico" "%DIST_DIR%\win-unpacked\tray-icon.ico" >nul
