@@ -29,6 +29,7 @@ jobs:
           Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip" -OutFile "electron-x64.zip"
           New-Item -ItemType Directory -Force -Path "electron-dist"
           7z x electron-x64.zip -o"./electron-dist" -y
+          dir ./electron-dist
 
       # ===== ARM64 Electron =====
       - name: Download & Extract Electron ARM64
@@ -37,18 +38,19 @@ jobs:
           Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-arm64.zip" -OutFile "electron-arm64.zip"
           New-Item -ItemType Directory -Force -Path "electron-dist-arm64"
           7z x electron-arm64.zip -o"./electron-dist-arm64" -y
+          dir ./electron-dist-arm64
 
       # ===== Build x64 =====
       - name: Build x64
         shell: pwsh
         run: |
-          npx electron-builder --win --x64 -c.electronDist=./electron-dist
+          npx electron-builder --win --x64 "-c.electronDist=./electron-dist"
 
       # ===== Build ARM64 =====
       - name: Build ARM64
         shell: pwsh
         run: |
-          npx electron-builder --win --arm64 -c.electronDist=./electron-dist-arm64
+          npx electron-builder --win --arm64 "-c.electronDist=./electron-dist-arm64"
 
       # ===== Upload Artifacts =====
       - name: Upload installers
