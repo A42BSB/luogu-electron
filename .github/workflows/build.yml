@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -23,42 +23,40 @@ jobs:
         run: npm ci
 
       # ===== x64 Electron =====
-      - name: Download Electron x64
-        shell: bash
+      - name: Download & Extract Electron x64
+        shell: pwsh
         run: |
-          curl -L -o electron-x64.zip \
-            https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip
-          mkdir electron-dist
-          tar -xf electron-x64.zip -C electron-dist
+          Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip" -OutFile "electron-x64.zip"
+          New-Item -ItemType Directory -Force -Path "electron-dist"
+          7z x electron-x64.zip -oelectron-dist
 
       # ===== ARM64 Electron =====
-      - name: Download Electron ARM64
-        shell: bash
+      - name: Download & Extract Electron ARM64
+        shell: pwsh
         run: |
-          curl -L -o electron-arm64.zip \
-            https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-arm64.zip
-          mkdir electron-dist-arm64
-          tar -xf electron-arm64.zip -C electron-dist-arm64
+          Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-arm64.zip" -OutFile "electron-arm64.zip"
+          New-Item -ItemType Directory -Force -Path "electron-dist-arm64"
+          7z x electron-arm64.zip -oelectron-dist-arm64
 
       # ===== Build x64 =====
       - name: Build x64
+        shell: pwsh
         run: |
-          npx electron-builder --win --x64 `
-            -c.electronDist=electron-dist
+          npx electron-builder --win --x64 -c.electronDist=electron-dist
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
       # ===== Build ARM64 =====
       - name: Build ARM64
+        shell: pwsh
         run: |
-          npx electron-builder --win --arm64 `
-            -c.electronDist=electron-dist-arm64
+          npx electron-builder --win --arm64 -c.electronDist=electron-dist-arm64
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
 
       # ===== Upload Artifacts =====
       - name: Upload installers
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: luogu-electron-installers
           path: |
