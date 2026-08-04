@@ -19,7 +19,6 @@ jobs:
           node-version: 22
           cache: npm
 
-      # 先正常安装依赖，不强制跳过任何下载，保证 node_modules 完整性
       - name: Install dependencies
         run: npm ci
 
@@ -43,13 +42,13 @@ jobs:
       - name: Build x64
         shell: pwsh
         run: |
-          npx electron-builder --win --x64 -c.electronDist=./electron-dist -c.electronVersion=43.2.0
+          npx electron-builder --win --x64 -c.electronDist=./electron-dist
 
       # ===== Build ARM64 =====
       - name: Build ARM64
         shell: pwsh
         run: |
-          npx electron-builder --win --arm64 -c.electronDist=./electron-dist-arm64 -c.electronVersion=43.2.0
+          npx electron-builder --win --arm64 -c.electronDist=./electron-dist-arm64
 
       # ===== Upload Artifacts =====
       - name: Upload installers
