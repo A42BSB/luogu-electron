@@ -44,13 +44,17 @@ jobs:
       - name: Build x64
         shell: pwsh
         run: |
-          npx electron-builder --win --x64 "--config.electronDist=./electron-dist" --publish never
+          npx electron-builder --win --x64 "--config.electronDist=./electron-dist" --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       # ===== Build ARM64 =====
       - name: Build ARM64
         shell: pwsh
         run: |
-          npx electron-builder --win --arm64 "--config.electronDist=./electron-dist-arm64" --publish never
+          npx electron-builder --win --arm64 "--config.electronDist=./electron-dist-arm64" --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       # ===== Upload Artifacts =====
       - name: Upload installers
