@@ -1,4 +1,4 @@
-name: Build Windows x64 & ARM64
+name: Build & Draft Release
 
 on:
   push:
@@ -6,63 +6,98 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  build-x64:
     runs-on: windows-latest
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-      - name: Setup Node
-        uses: actions/setup-node@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
-      # ===== x64 Electron =====
       - name: Download & Extract Electron x64
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip" -OutFile "electron-x64.zip"
           New-Item -ItemType Directory -Force -Path "electron-dist"
           7z x electron-x64.zip -o"./electron-dist" -y
-          dir ./electron-dist
 
-      # ===== ARM64 Electron =====
+      - name: Build x64
+        shell: pwsh
+        run: |
+          npx electron-builder --win --x64 `
+            "--config.electronDist=./electron-dist" `
+            --publish never
+
+      - name: Upload x64 artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: dist-x64
+          path: |
+            dist/*.exe
+            dist/*.yml
+            dist/*.blockmap
+
+  build-arm64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
       - name: Download & Extract Electron ARM64
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-arm64.zip" -OutFile "electron-arm64.zip"
           New-Item -ItemType Directory -Force -Path "electron-dist-arm64"
           7z x electron-arm64.zip -o"./electron-dist-arm64" -y
-          dir ./electron-dist-arm64
 
-      # ===== Build x64 =====
-      - name: Build x64
-        shell: pwsh
-        run: |
-          npx electron-builder --win --x64 "--config.electronDist=./electron-dist" --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      # ===== Build ARM64 =====
       - name: Build ARM64
         shell: pwsh
         run: |
-          npx electron-builder --win --arm64 "--config.electronDist=./electron-dist-arm64" --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          npx electron-builder --win --arm64 `
+            "--config.electronDist=./electron-dist-arm64" `
+            --publish never
 
-      # ===== Upload Artifacts =====
-      - name: Upload installers
+      - name: Upload ARM64 artifact
         uses: actions/upload-artifact@v5
         with:
-          name: luogu-electron-installers
+          name: dist-arm64
           path: |
             dist/*.exe
             dist/*.yml
             dist/*.blockmap
+
+  release:
+    needs: [build-x64, build-arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+
+      - name: Create / Update Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: true
+          prerelease: true
+          files: |
+            dist-x64/*
+            dist-arm64/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
