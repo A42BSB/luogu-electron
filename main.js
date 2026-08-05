@@ -77,11 +77,14 @@ function createWindow(url = 'https://www.luogu.com.cn') {
   }, 5000)
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://www.luogu.com.cn')) {
-      createWindow(url)
-    } else if (url.startsWith('https://')) {
-      win.loadURL(url)
-    }
+    try {
+      const parsedUrl = new URL(url)
+      if (parsedUrl.protocol === 'https:' && parsedUrl.hostname === 'www.luogu.com.cn') {
+        createWindow(url)
+      } else if (parsedUrl.protocol === 'https:') {
+        win.loadURL(url)
+      }
+    } catch (_) {}
     return { action: 'deny' }
   })
 
