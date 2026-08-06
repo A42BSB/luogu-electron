@@ -38,13 +38,20 @@ jobs:
             "--config.electronDist=./electron-dist" `
             --publish never
 
+      - name: Rename latest.yml → latest-x64.yml
+        shell: pwsh
+        run: |
+          if (Test-Path "dist/latest.yml") {
+            Move-Item "dist/latest.yml" "dist/latest-x64.yml" -Force
+          }
+
       - name: Upload x64 artifact
         uses: actions/upload-artifact@v5
         with:
           name: dist-x64
           path: |
             dist/*.exe
-            dist/*.yml
+            dist/latest-x64.yml
             dist/*.blockmap
 
   build-arm64:
@@ -73,13 +80,20 @@ jobs:
             "--config.electronDist=./electron-dist-arm64" `
             --publish never
 
+      - name: Rename latest.yml → latest-arm64.yml
+        shell: pwsh
+        run: |
+          if (Test-Path "dist/latest.yml") {
+            Move-Item "dist/latest.yml" "dist/latest-arm64.yml" -Force
+          }
+
       - name: Upload ARM64 artifact
         uses: actions/upload-artifact@v5
         with:
           name: dist-arm64
           path: |
             dist/*.exe
-            dist/*.yml
+            dist/latest-arm64.yml
             dist/*.blockmap
 
   release:
@@ -88,6 +102,10 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v5
+
+      - name: Prepare latest.yml for x64
+        run: |
+          cp dist-x64/latest-x64.yml latest.yml
 
       - name: Create / Update Draft Release
         uses: softprops/action-gh-release@v2
@@ -99,5 +117,6 @@ jobs:
           files: |
             dist-x64/*
             dist-arm64/*
+            latest.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
