@@ -25,7 +25,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "洛谷 Setup ${version}-${arch}.exe"
+      "artifactName": "luogu-setup-${version}-${arch}.exe"
     },
     "publish": {
       "provider": "github",
