@@ -12,7 +12,7 @@
     "appId": "com.a42null.luogu",
     "productName": "洛谷",
     "copyright": "Copyright © 2026 A42Null",
-    "electronVersion": "43.2.0",
+    "electronVersion": "43.3.0",
     "directories": {
       "output": "dist"
     },
@@ -34,7 +34,7 @@
     }
   },
   "devDependencies": {
-    "electron": "^43.2.0",
+    "electron": "43.3.0",
     "electron-builder": "^26.15.3"
   },
   "dependencies": {
