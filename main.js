@@ -393,22 +393,44 @@ function buildMenu() {
             const { autoUpdater } = require('electron-updater')
             autoUpdater.autoDownload = false
             autoUpdater.allowPrerelease = isPrerelease
-            autoUpdater.checkForUpdates().then(info => {
-              if (!info || !info.updateInfo) {
-                dialog.showMessageBox({ type: 'info', title: '检查更新', message: '当前已是最新版本', buttons: ['确定'] })
-                return
-              }
+
+            // 先卸掉旧监听，避免多次点击重复弹
+            autoUpdater.removeAllListeners('update-available')
+            autoUpdater.removeAllListeners('update-not-available')
+            autoUpdater.removeAllListeners('error')
+
+            autoUpdater.once('update-available', (info) => {
               dialog.showMessageBox({
                 type: 'info',
                 title: '发现新版本',
-                message: `新版本：${info.updateInfo.version}\n是否打开发布页？`,
+                message: `新版本：${info.version}\n是否打开发布页？`,
                 buttons: ['取消', '打开']
               }).then(res => {
-                if (res.response === 1) shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
+                if (res.response === 1) {
+                  shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
+                }
               })
-            }).catch(() => {
-              dialog.showMessageBox({ type: 'error', title: '检查更新失败', message: '无法连接更新服务器', buttons: ['确定'] })
             })
+
+            autoUpdater.once('update-not-available', (info) => {
+              dialog.showMessageBox({
+                type: 'info',
+                title: '检查更新',
+                message: `当前已是最新版本（${info.version}）`,
+                buttons: ['确定']
+              })
+            })
+
+            autoUpdater.once('error', (err) => {
+              dialog.showMessageBox({
+                type: 'error',
+                title: '检查更新失败',
+                message: '无法连接更新服务器',
+                buttons: ['确定']
+              })
+            })
+
+            autoUpdater.checkForUpdates().catch(() => {})
           }
         },
         ...(!isPrerelease ? [
