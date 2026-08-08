@@ -116,7 +116,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           draft: true
-          prerelease: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             dist-x64/*
             dist-arm64/*

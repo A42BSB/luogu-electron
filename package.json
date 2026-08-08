@@ -1,6 +1,6 @@
 {
   "name": "luogu-electron",
-  "version": "1.0.2-alpha.5",
+  "version": "1.0.2",
   "description": "洛谷非官方桌面客户端（Pre-Release）",
   "author": "A42Null",
   "main": "main.js",
