@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write
 
+env:
+  ELECTRON_VER: "43.3.0"
+
 jobs:
   build-x64:
     runs-on: windows-latest
@@ -27,7 +30,7 @@ jobs:
       - name: Download & Extract Electron x64
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-x64.zip" -OutFile "electron-x64.zip"
+          Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/${{ env.ELECTRON_VER }}/electron-v${{ env.ELECTRON_VER }}-win32-x64.zip" -OutFile "electron-x64.zip"
           New-Item -ItemType Directory -Force -Path "electron-dist"
           7z x electron-x64.zip -o"./electron-dist" -y
 
@@ -69,7 +72,7 @@ jobs:
       - name: Download & Extract Electron ARM64
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/43.2.0/electron-v43.2.0-win32-arm64.zip" -OutFile "electron-arm64.zip"
+          Invoke-WebRequest -Uri "https://mirrors.huaweicloud.com/electron/${{ env.ELECTRON_VER }}/electron-v${{ env.ELECTRON_VER }}-win32-arm64.zip" -OutFile "electron-arm64.zip"
           New-Item -ItemType Directory -Force -Path "electron-dist-arm64"
           7z x electron-arm64.zip -o"./electron-dist-arm64" -y
 
@@ -103,7 +106,7 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v5
 
-      - name: Prepare latest.yml for x64
+      - name: Prepare latest.yml for x64 updater
         run: |
           cp dist-x64/latest-x64.yml latest.yml
 
