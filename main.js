@@ -77,11 +77,14 @@ function createWindow(url = 'https://www.luogu.com.cn') {
   }, 5000)
 
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://www.luogu.com.cn')) {
-      createWindow(url)
-    } else if (url.startsWith('https://')) {
-      win.loadURL(url)
-    }
+    try {
+      const parsedUrl = new URL(url)
+      if (parsedUrl.protocol === 'https:' && parsedUrl.hostname === 'www.luogu.com.cn') {
+        createWindow(url)
+      } else if (parsedUrl.protocol === 'https:') {
+        win.loadURL(url)
+      }
+    } catch (_) {}
     return { action: 'deny' }
   })
 
@@ -102,7 +105,15 @@ function createWindow(url = 'https://www.luogu.com.cn') {
       )
     }
 
-    if (params.linkURL && params.linkURL.startsWith('https://www.luogu.com.cn')) {
+    let isAllowedLuoguLink = false
+    if (params.linkURL) {
+      try {
+        const u = new URL(params.linkURL)
+        isAllowedLuoguLink = u.protocol === 'https:' && u.hostname === 'www.luogu.com.cn'
+      } catch (_) {}
+    }
+
+    if (isAllowedLuoguLink) {
       template.push(
         { type: 'separator' },
         { label: '在新窗口打开', click: () => createWindow(params.linkURL) },
