@@ -1,6 +1,6 @@
 # 洛谷客户端（非官方）
 
-基于 Electron 的洛谷桌面客户端，支持 Windows / macOS / Linux。
+基于 Electron 的洛谷桌面客户端。
 
 ## 下载
 
