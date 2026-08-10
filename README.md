@@ -5,7 +5,9 @@
 ## 下载
 
 可从[Releases](https://github.com/A42Null/luogu-electron/releases/latest)中下载。
+
 若下载速度慢，可前往[镜像站](https://luogu-electron-cdn.pages.dev/releases)下载。（实测速度在4MB/s~20MB/s之间）
+
 菜单“帮助”中可开启 Cloudflare 镜像源，用于加速检查更新和下载。
 
 ## 技术说明
