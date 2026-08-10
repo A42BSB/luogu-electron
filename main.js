@@ -1,29 +1,98 @@
 const { app, BrowserWindow, Menu, clipboard, shell, Tray, nativeImage, dialog, globalShortcut, session, net, ipcMain } = require('electron')
 const path = require('path')
 const fs = require('fs')
-const configPath = path.join(app.getPath('userData'), 'config.json')
+import Store from 'electron-store'
+
+// ========================
+// 配置 & 状态
+// ========================
+const store = new Store({
+  defaults: {
+    useCfMirror: false
+  }
+})
 
 let tray = null
 let searchWin = null
+let mainWindow = null
 
-function loadConfig() {
-  try {
-    if (fs.existsSync(configPath)) {
-      return JSON.parse(fs.readFileSync(configPath, 'utf-8'))
-    }
-  } catch (_) {}
-  return {
-    searchOpenMode: 'external' // external | new | current
+// ========================
+// Updater 核心
+// ========================
+function getAutoUpdater() {
+  const { autoUpdater } = require('electron-updater')
+  autoUpdater.autoDownload = false
+  autoUpdater.allowPrerelease = app.getVersion().includes('-')
+  return autoUpdater
+}
+
+function applyUpdaterFeed() {
+  const autoUpdater = getAutoUpdater()
+  const useCf = store.get('useCfMirror')
+
+  if (useCf) {
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: 'https://luogu-electron-cdn.pages.dev'
+    })
+  } else {
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'A42Null',
+      repo: 'luogu-electron'
+    })
   }
 }
 
-function saveConfig(config) {
-  try {
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
-  } catch (_) {}
-}
-let config = loadConfig()
+function checkForUpdates(silent = false) {
+  const autoUpdater = getAutoUpdater()
+  applyUpdaterFeed()
 
+  autoUpdater.removeAllListeners('update-available')
+  autoUpdater.removeAllListeners('update-not-available')
+  autoUpdater.removeAllListeners('error')
+
+  autoUpdater.once('update-available', (info) => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: '发现新版本',
+      message: `新版本：${info.version}\n是否打开发布页？`,
+      buttons: ['取消', '打开']
+    }).then(res => {
+      if (res.response === 1) {
+        shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
+      }
+    })
+  })
+
+  if (!silent) {
+    autoUpdater.once('update-not-available', () => {
+      dialog.showMessageBox({
+        type: 'info',
+        title: '检查更新',
+        message: `当前已是最新版本（${app.getVersion()}）`,
+        buttons: ['确定']
+      })
+    })
+  }
+
+  autoUpdater.once('error', () => {
+    if (!silent) {
+      dialog.showMessageBox({
+        type: 'error',
+        title: '检查更新失败',
+        message: '无法连接更新服务器',
+        buttons: ['确定']
+      })
+    }
+  })
+
+  autoUpdater.checkForUpdates().catch(() => {})
+}
+
+// ========================
+// 窗口管理
+// ========================
 function createWindow(url = 'https://www.luogu.com.cn') {
   const statePath = path.join(app.getPath('userData'), 'window-state.json')
   let state = { width: 1280, height: 800 }
@@ -34,7 +103,7 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     }
   } catch (_) {}
 
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     ...state,
     title: '洛谷',
     icon: nativeImage.createFromPath(path.join(__dirname, 'icon.ico')),
@@ -45,17 +114,18 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     }
   })
 
-  if (state.isMaximized) win.maximize()
-  win.loadURL(url)
+  if (state.isMaximized) mainWindow.maximize()
+  mainWindow.loadURL(url)
 
-  win.webContents.on('did-start-loading', () => win.setTitle('洛谷'))
-  win.webContents.on('did-finish-load', () => win.setTitle('洛谷'))
+  mainWindow.webContents.on('did-start-loading', () => mainWindow.setTitle('洛谷'))
+  mainWindow.webContents.on('did-finish-load', () => mainWindow.setTitle('洛谷'))
 
+  // 离线检测
   let offlineShown = false
-  win.webContents.on('did-fail-load', () => {
+  mainWindow.webContents.on('did-fail-load', () => {
     if (!net.isOnline() && !offlineShown) {
       offlineShown = true
-      dialog.showMessageBox(win, {
+      dialog.showMessageBox(mainWindow, {
         type: 'warning',
         title: '网络异常',
         message: '当前处于离线状态，部分功能不可用。',
@@ -68,7 +138,7 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     if (net.isOnline()) {
       if (offlineShown) {
         offlineShown = false
-        win.webContents.reload()
+        mainWindow.webContents.reload()
         clearInterval(onlineTimer)
       }
     } else {
@@ -76,23 +146,24 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     }
   }, 5000)
 
-  win.webContents.setWindowOpenHandler(({ url }) => {
+  // 窗口打开控制
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     try {
       const parsedUrl = new URL(url)
       if (parsedUrl.protocol === 'https:' && parsedUrl.hostname === 'www.luogu.com.cn') {
         createWindow(url)
       } else if (parsedUrl.protocol === 'https:') {
-        win.loadURL(url)
+        mainWindow.loadURL(url)
       }
     } catch (_) {}
     return { action: 'deny' }
   })
 
   // 右键菜单
-  win.webContents.on('context-menu', (_e, params) => {
+  mainWindow.webContents.on('context-menu', (_e, params) => {
     const template = []
 
-    if (params.selectionText && params.selectionText.trim()) {
+    if (params.selectionText) {
       template.push(
         { label: '复制', role: 'copy' },
         { type: 'separator' },
@@ -105,15 +176,15 @@ function createWindow(url = 'https://www.luogu.com.cn') {
       )
     }
 
-    let isAllowedLuoguLink = false
+    let isLuoguLink = false
     if (params.linkURL) {
       try {
         const u = new URL(params.linkURL)
-        isAllowedLuoguLink = u.protocol === 'https:' && u.hostname === 'www.luogu.com.cn'
+        isLuoguLink = u.protocol === 'https:' && u.hostname === 'www.luogu.com.cn'
       } catch (_) {}
     }
 
-    if (isAllowedLuoguLink) {
+    if (isLuoguLink) {
       template.push(
         { type: 'separator' },
         { label: '在新窗口打开', click: () => createWindow(params.linkURL) },
@@ -124,7 +195,7 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     if (params.mediaType === 'image') {
       template.push(
         { type: 'separator' },
-        { label: '复制图片', click: () => win.webContents.copyImageAt(params.x, params.y) },
+        { label: '复制图片', click: () => mainWindow.webContents.copyImageAt(params.x, params.y) },
         { label: '复制图片地址', click: () => clipboard.writeText(params.srcURL) }
       )
     }
@@ -150,32 +221,35 @@ function createWindow(url = 'https://www.luogu.com.cn') {
 
     template.push(
       { type: 'separator' },
-      { label: '检查元素', click: () => win.webContents.inspectElement(params.x, params.y) }
+      { label: '检查元素', click: () => mainWindow.webContents.inspectElement(params.x, params.y) }
     )
 
-    Menu.buildFromTemplate(template).popup({ window: win })
+    Menu.buildFromTemplate(template).popup({ window: mainWindow })
   })
 
-  win.on('close', (e) => {
+  mainWindow.on('close', (e) => {
     if (!app.isQuitting) {
       e.preventDefault()
-      win.hide()
+      mainWindow.hide()
       return
     }
     try {
       fs.writeFileSync(statePath, JSON.stringify({
-        width: win.getBounds().width,
-        height: win.getBounds().height,
-        x: win.getBounds().x,
-        y: win.getBounds().y,
-        isMaximized: win.isMaximized()
+        width: mainWindow.getBounds().width,
+        height: mainWindow.getBounds().height,
+        x: mainWindow.getBounds().x,
+        y: mainWindow.getBounds().y,
+        isMaximized: mainWindow.isMaximized()
       }, null, 2))
     } catch (_) {}
   })
 
-  return win
+  return mainWindow
 }
 
+// ========================
+// 托盘
+// ========================
 function createTray() {
   const icon = nativeImage.createFromPath(path.join(__dirname, 'tray-icon.ico'))
   tray = new Tray(icon)
@@ -185,8 +259,10 @@ function createTray() {
     {
       label: '显示窗口',
       click: () => {
-        const w = BrowserWindow.getAllWindows()[0]
-        if (w) { w.show(); w.focus() }
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.focus()
+        }
       }
     },
     {
@@ -204,11 +280,16 @@ function createTray() {
   ]))
 
   tray.on('double-click', () => {
-    const w = BrowserWindow.getAllWindows()[0]
-    if (w) { w.show(); w.focus() }
+    if (mainWindow) {
+      mainWindow.show()
+      mainWindow.focus()
+    }
   })
 }
 
+// ========================
+// 搜索窗口
+// ========================
 function openSearchDialog() {
   if (searchWin) {
     searchWin.focus()
@@ -220,8 +301,8 @@ function openSearchDialog() {
     height: 260,
     resizable: false,
     modal: true,
-    parent: BrowserWindow.getFocusedWindow(),
-    autoHideMenuBar: true, // 关键：无菜单栏
+    parent: mainWindow,
+    autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -251,62 +332,31 @@ ipcMain.on('show-search-context-menu', (event) => {
     { label: '全选', role: 'selectAll' }
   ]
 
-  const menu = Menu.buildFromTemplate(template)
-  menu.popup({ window: win, x, y })
+  Menu.buildFromTemplate(template).popup({ window: win })
 })
 
 ipcMain.on('open-search-url', (_, url) => {
-  const mode = config.searchOpenMode || 'external'
+  const mode = store.get('searchOpenMode', 'external')
 
   if (mode === 'external') {
     shell.openExternal(url)
-  }
-  else if (mode === 'new') {
-    // 1先关搜题窗口（避免它抢焦点）
-    if (searchWin) {
-      searchWin.close()
-      searchWin = null
-    }
-
-    // 2创建新窗口
-    const win = new BrowserWindow({
-      width: 1280,
-      height: 800,
-      title: '洛谷',
-      icon: nativeImage.createFromPath(path.join(__dirname, 'icon.ico')),
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true
-      },
-      show: false // 关键：先不显示
-    })
-
-    // 3页面准备好后再显示 + 强制聚焦
-    win.once('ready-to-show', () => {
-      win.show()
-      win.focus()
-      win.moveTop()
-    })
-
-    win.loadURL(url)
-  }
-  else if (mode === 'current') {
-    const win = BrowserWindow.getAllWindows()[0]
-    if (win) {
-      win.loadURL(url)
-      win.show()
-      win.focus()
-    }
+  } else if (mode === 'new') {
+    if (searchWin) searchWin.close()
+    createWindow(url)
+  } else if (mode === 'current' && mainWindow) {
+    mainWindow.loadURL(url)
+    mainWindow.show()
+    mainWindow.focus()
   }
 })
 
 ipcMain.on('close-search-window', () => {
-  if (searchWin) {
-    searchWin.close()
-  }
+  if (searchWin) searchWin.close()
 })
 
+// ========================
+// 菜单
+// ========================
 function buildMenu() {
   const isPrerelease = app.getVersion().includes('-')
 
@@ -319,12 +369,12 @@ function buildMenu() {
         {
           label: '在默认浏览器中打开当前页面',
           accelerator: 'CmdOrCtrl+Shift+B',
-          click: (_, fw) => { if (fw) shell.openExternal(fw.webContents.getURL()) }
+          click: () => shell.openExternal(mainWindow?.webContents.getURL() || '')
         },
         {
           label: '复制当前网址链接',
           accelerator: 'CmdOrCtrl+L',
-          click: (_, fw) => { if (fw) clipboard.writeText(fw.webContents.getURL()) }
+          click: () => clipboard.writeText(mainWindow?.webContents.getURL() || '')
         },
         { type: 'separator' },
         { label: '关闭窗口', role: 'close' },
@@ -347,7 +397,7 @@ function buildMenu() {
         {
           label: '搜题',
           accelerator: 'CmdOrCtrl+K',
-          click: () => openSearchDialog()
+          click: openSearchDialog
         },
         { type: 'separator' },
         { label: '剪切', role: 'cut' },
@@ -358,8 +408,8 @@ function buildMenu() {
     {
       label: '视图',
       submenu: [
-        { label: '刷新', role: 'reload' },
-        { label: '强制刷新', role: 'forceReload' },
+        { label: '刷新', role: 'reload', accelerator: 'F5' },
+        { label: '强制刷新', role: 'forceReload', accelerator: 'Ctrl+F5' },
         { type: 'separator' },
         { label: '实际大小', role: 'resetZoom' },
         { label: '放大', role: 'zoomIn' },
@@ -389,61 +439,26 @@ function buildMenu() {
         {
           label: '检查更新',
           accelerator: 'Ctrl+Alt+U',
-          click: () => {
-            const { autoUpdater } = require('electron-updater')
-            autoUpdater.autoDownload = false
-            autoUpdater.allowPrerelease = isPrerelease
-
-            // 先卸掉旧监听，避免多次点击重复弹
-            autoUpdater.removeAllListeners('update-available')
-            autoUpdater.removeAllListeners('update-not-available')
-            autoUpdater.removeAllListeners('error')
-
-            autoUpdater.once('update-available', (info) => {
-              dialog.showMessageBox({
-                type: 'info',
-                title: '发现新版本',
-                message: `新版本：${info.version}\n是否打开发布页？`,
-                buttons: ['取消', '打开']
-              }).then(res => {
-                if (res.response === 1) {
-                  shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
-                }
-              })
-            })
-
-            autoUpdater.once('update-not-available', (info) => {
-              dialog.showMessageBox({
-                type: 'info',
-                title: '检查更新',
-                message: `当前已是最新版本（${info.version}）`,
-                buttons: ['确定']
-              })
-            })
-
-            autoUpdater.once('error', (err) => {
-              dialog.showMessageBox({
-                type: 'error',
-                title: '检查更新失败',
-                message: '无法连接更新服务器',
-                buttons: ['确定']
-              })
-            })
-
-            autoUpdater.checkForUpdates().catch(() => {})
-          }
+          click: () => checkForUpdates(false)
         },
         ...(!isPrerelease ? [
           { type: 'separator' },
           {
             label: '更新至测试版',
             click: () => {
-              const { autoUpdater } = require('electron-updater')
+              const autoUpdater = getAutoUpdater()
               autoUpdater.autoDownload = false
               autoUpdater.allowPrerelease = true
+              applyUpdaterFeed()
+
               autoUpdater.checkForUpdates().then(info => {
                 if (!info || !info.updateInfo) {
-                  dialog.showMessageBox({ type: 'info', title: '更新至测试版', message: '暂无测试版本', buttons: ['确定'] })
+                  dialog.showMessageBox({
+                    type: 'info',
+                    title: '更新至测试版',
+                    message: '暂无测试版本',
+                    buttons: ['确定']
+                  })
                   return
                 }
                 dialog.showMessageBox({
@@ -452,14 +467,30 @@ function buildMenu() {
                   message: `测试版本：${info.updateInfo.version}\n是否打开发布页？`,
                   buttons: ['取消', '打开']
                 }).then(res => {
-                  if (res.response === 1) shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
+                  if (res.response === 1) {
+                    shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
+                  }
                 })
               }).catch(() => {
-                dialog.showMessageBox({ type: 'error', title: '更新失败', message: '无法连接更新服务器', buttons: ['确定'] })
+                dialog.showMessageBox({
+                  type: 'error',
+                  title: '更新失败',
+                  message: '无法连接更新服务器',
+                  buttons: ['确定']
+                })
               })
             }
           }
         ] : []),
+        {
+          label: '更新使用 Cloudflare 镜像源',
+          type: 'checkbox',
+          checked: store.get('useCfMirror'),
+          click: (menuItem) => {
+            store.set('useCfMirror', menuItem.checked)
+            applyUpdaterFeed()
+          }
+        },
         { type: 'separator' },
         {
           label: 'GitHub 仓库',
@@ -472,17 +503,24 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
+// ========================
+// App 生命周期
+// ========================
 app.whenReady().then(() => {
   app.isQuitting = false
   buildMenu()
   createTray()
+  createWindow()
 
-  globalShortcut.register('CmdOrCtrl+R', () => {
-    const w = BrowserWindow.getFocusedWindow()
-    if (w) w.webContents.reload()
+  // ✅ 启动时初始化更新源
+  applyUpdaterFeed()
+
+  // ✅ F5 刷新
+  globalShortcut.register('F5', () => {
+    if (mainWindow) mainWindow.webContents.reload()
   })
 
-  // Cookie 长期化
+  // Cookie 持久化
   let refreshed = false
   session.defaultSession.webRequest.onResponseStarted(details => {
     if (refreshed || !details.url.includes('luogu.com.cn')) return
@@ -503,23 +541,24 @@ app.whenReady().then(() => {
     }).catch(() => {})
   })
 
-  createWindow()
-
+  // 打包后自动检查更新（静默）
   if (app.isPackaged) {
-    const { autoUpdater } = require('electron-updater')
+    const autoUpdater = getAutoUpdater()
     autoUpdater.autoDownload = false
     autoUpdater.allowPrerelease = isPrerelease
-    autoUpdater.checkForUpdates().catch(() => {})
-    autoUpdater.on('update-available', info => {
+    autoUpdater.on('update-available', (info) => {
       dialog.showMessageBox({
         type: 'info',
         title: '发现新版本',
-        message: `新版本：${info.updateInfo.version}\n是否打开发布页？`,
-        buttons: ['Cancel', '打开']
+        message: `新版本：${info.version}\n是否打开发布页？`,
+        buttons: ['取消', '打开']
       }).then(res => {
-        if (res.response === 1) shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
+        if (res.response === 1) {
+          shell.openExternal('https://github.com/A42Null/luogu-electron/releases')
+        }
       })
     })
+    autoUpdater.checkForUpdates().catch(() => {})
   }
 })
 
