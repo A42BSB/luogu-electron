@@ -1,7 +1,7 @@
 const { app, BrowserWindow, Menu, clipboard, shell, Tray, nativeImage, dialog, globalShortcut, session, net, ipcMain } = require('electron')
 const path = require('path')
 const fs = require('fs')
-import Store from 'electron-store'
+const Store = require('electron-store')
 
 // ========================
 // 配置 & 状态
