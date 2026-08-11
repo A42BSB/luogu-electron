@@ -1,24 +1,24 @@
-# 洛谷桌面客户端（非官方）
+# 洛谷客户端（非官方）
 
-基于 Electron 的第三方洛谷桌面客户端。
-
----
+基于 Electron 的洛谷桌面客户端。
 
 ## 下载
 
-前往 [Releases](https://github.com/A42Null/luogu-electron/releases) 获取安装包。
+可从[Releases](https://github.com/A42Null/luogu-electron/releases/latest)中下载。
 
-若下载缓慢，可使用[镜像](https://gh-proxy.com)。
+若下载速度慢，可前往[镜像站](https://luogu-electron-cdn.pages.dev/releases)下载。（实测速度在4MB/s~20MB/s之间）
 
----
+菜单“帮助”中可开启 Cloudflare 镜像源，用于加速检查更新和下载。
 
-## 说明
+## 技术说明
 
-* 与洛谷官方无关，未使用任何非公开接口
-* 仅用于学习与研究
-* 无代码签名，可能被 SmartScreen 拦截
+- 支持 GitHub / Cloudflare 双更新源
+- Cloudflare Pages 反代 GitHub Releases
+- 构建产物为纯英文命名，避免编码问题
 
----
+## 协议
+
+[MIT](https://github.com/A42Null/luogu-electron/blob/main/LICENSE)
 
 ## 使用须知
 
@@ -31,18 +31,6 @@
 * 不要通过本客户端制造异常访问或高频请求
 
 如因上述行为触发洛谷风控，属于可预期的技术后果，与本客户端无关。
-
----
-
-## CHANGELOG
-
-详见 [Releases](https://github.com/A42Null/luogu-electron)
-
----
-
-## License
-
-[MIT](https://github.com/A42Null/luogu-electron/blob/main/LICENSE)
 
 以上内容使用Hy3润色。
 
