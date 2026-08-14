@@ -1,6 +1,6 @@
 {
   "name": "luogu-electron",
-  "version": "1.0.3-alpha.2",
+  "version": "1.0.3-alpha.3",
   "description": "洛谷非官方桌面客户端（Pre-Release）",
   "author": "A42Null",
   "main": "main.js",
@@ -38,7 +38,7 @@
     "electron-builder": "^26.15.3"
   },
   "dependencies": {
-    "electron-store": "^11.0.2",
+    "electron-store": "8.1.0",
     "electron-updater": "^6.8.9"
   }
 }
