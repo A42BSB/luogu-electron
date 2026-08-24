@@ -1,5 +1,3 @@
-<!-- TECH-DEBT: 搜题窗口唯一允许 nodeIntegration 的入口 -->
-<!-- 仅用于 IPC，不包含任何业务逻辑 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -69,16 +67,13 @@ const { ipcRenderer } = require('electron')
 
 const input = document.getElementById('kw')
 
-/* ===== 自动聚焦 ===== */
 window.addEventListener('DOMContentLoaded', () => input.focus())
 
-/* ===== 输入框右键菜单（纯 IPC，无 Node 泄漏）===== */
 input.addEventListener('contextmenu', (e) => {
   e.preventDefault()
-  ipcRenderer.send('show-search-context-menu', { x: e.x, y: e.y })
+  ipcRenderer.send('show-search-context-menu')
 })
 
-/* ===== 确定 ===== */
 function submit() {
   const raw = input.value.trim()
   if (!raw) return input.focus()
@@ -97,7 +92,6 @@ document.getElementById('cancel').onclick = () => {
   ipcRenderer.send('close-search-window')
 }
 
-/* ===== Enter 确认 ===== */
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault()
