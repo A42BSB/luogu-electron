@@ -5,13 +5,15 @@ const fs = require('fs')
 // ========================
 // 配置 & 状态
 // ========================
-const StoreModule = require('electron-store');
-const Store = StoreModule.default || StoreModule;
+const StoreModule = require('electron-store')
+const Store = StoreModule.default || StoreModule
 const store = new Store({
   defaults: {
-    useCfMirror: false
+    useCfMirror: false,
+    searchOpenMode: 'external'
   }
-});
+})
+
 let tray = null
 let searchWin = null
 let mainWindow = null
@@ -103,7 +105,7 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     }
   } catch (_) {}
 
-  mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     ...state,
     title: '洛谷',
     icon: nativeImage.createFromPath(path.join(__dirname, 'icon.ico')),
@@ -114,18 +116,18 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     }
   })
 
-  if (state.isMaximized) mainWindow.maximize()
-  mainWindow.loadURL(url)
+  if (state.isMaximized) win.maximize()
+  win.loadURL(url)
 
-  mainWindow.webContents.on('did-start-loading', () => mainWindow.setTitle('洛谷'))
-  mainWindow.webContents.on('did-finish-load', () => mainWindow.setTitle('洛谷'))
+  win.webContents.on('did-start-loading', () => win.setTitle('洛谷'))
+  win.webContents.on('did-finish-load', () => win.setTitle('洛谷'))
 
   // 离线检测
   let offlineShown = false
-  mainWindow.webContents.on('did-fail-load', () => {
+  win.webContents.on('did-fail-load', () => {
     if (!net.isOnline() && !offlineShown) {
       offlineShown = true
-      dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(win, {
         type: 'warning',
         title: '网络异常',
         message: '当前处于离线状态，部分功能不可用。',
@@ -138,7 +140,7 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     if (net.isOnline()) {
       if (offlineShown) {
         offlineShown = false
-        mainWindow.webContents.reload()
+        win.webContents.reload()
         clearInterval(onlineTimer)
       }
     } else {
@@ -147,20 +149,20 @@ function createWindow(url = 'https://www.luogu.com.cn') {
   }, 5000)
 
   // 窗口打开控制
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+  win.webContents.setWindowOpenHandler(({ url }) => {
     try {
       const parsedUrl = new URL(url)
       if (parsedUrl.protocol === 'https:' && parsedUrl.hostname === 'www.luogu.com.cn') {
         createWindow(url)
       } else if (parsedUrl.protocol === 'https:') {
-        mainWindow.loadURL(url)
+        win.loadURL(url)
       }
     } catch (_) {}
     return { action: 'deny' }
   })
 
   // 右键菜单
-  mainWindow.webContents.on('context-menu', (_e, params) => {
+  win.webContents.on('context-menu', (_e, params) => {
     const template = []
 
     if (params.selectionText) {
@@ -168,7 +170,7 @@ function createWindow(url = 'https://www.luogu.com.cn') {
         { label: '复制', role: 'copy' },
         { type: 'separator' },
         {
-          label: `使用百度搜索“${params.selectionText.slice(0, 12)}…”`,
+          label: `使用百度搜索"${params.selectionText.slice(0, 12)}…"`,
           click: () => shell.openExternal(
             'https://www.baidu.com/s?wd=' + encodeURIComponent(params.selectionText)
           )
@@ -195,7 +197,7 @@ function createWindow(url = 'https://www.luogu.com.cn') {
     if (params.mediaType === 'image') {
       template.push(
         { type: 'separator' },
-        { label: '复制图片', click: () => mainWindow.webContents.copyImageAt(params.x, params.y) },
+        { label: '复制图片', click: () => win.webContents.copyImageAt(params.x, params.y) },
         { label: '复制图片地址', click: () => clipboard.writeText(params.srcURL) }
       )
     }
@@ -221,30 +223,35 @@ function createWindow(url = 'https://www.luogu.com.cn') {
 
     template.push(
       { type: 'separator' },
-      { label: '检查元素', click: () => mainWindow.webContents.inspectElement(params.x, params.y) }
+      { label: '检查元素', click: () => win.webContents.inspectElement(params.x, params.y) }
     )
 
-    Menu.buildFromTemplate(template).popup({ window: mainWindow })
+    Menu.buildFromTemplate(template).popup({ window: win })
   })
 
-  mainWindow.on('close', (e) => {
+  win.on('close', (e) => {
     if (!app.isQuitting) {
       e.preventDefault()
-      mainWindow.hide()
+      win.hide()
       return
     }
     try {
       fs.writeFileSync(statePath, JSON.stringify({
-        width: mainWindow.getBounds().width,
-        height: mainWindow.getBounds().height,
-        x: mainWindow.getBounds().x,
-        y: mainWindow.getBounds().y,
-        isMaximized: mainWindow.isMaximized()
+        width: win.getBounds().width,
+        height: win.getBounds().height,
+        x: win.getBounds().x,
+        y: win.getBounds().y,
+        isMaximized: win.isMaximized()
       }, null, 2))
     } catch (_) {}
   })
 
-  return mainWindow
+  // 第一次创建时赋值给 mainWindow
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    mainWindow = win
+  }
+
+  return win
 }
 
 // ========================
@@ -259,9 +266,11 @@ function createTray() {
     {
       label: '显示窗口',
       click: () => {
-        if (mainWindow) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.show()
           mainWindow.focus()
+        } else {
+          mainWindow = createWindow()
         }
       }
     },
@@ -280,7 +289,7 @@ function createTray() {
   ]))
 
   tray.on('double-click', () => {
-    if (mainWindow) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.show()
       mainWindow.focus()
     }
@@ -291,7 +300,7 @@ function createTray() {
 // 搜索窗口
 // ========================
 function openSearchDialog() {
-  if (searchWin) {
+  if (searchWin && !searchWin.isDestroyed()) {
     searchWin.focus()
     return
   }
@@ -300,8 +309,6 @@ function openSearchDialog() {
     width: 420,
     height: 260,
     resizable: false,
-    modal: true,
-    parent: mainWindow,
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: true,
@@ -317,6 +324,9 @@ function openSearchDialog() {
   })
 }
 
+// ========================
+// IPC
+// ========================
 ipcMain.on('show-search-context-menu', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   if (!win) return
@@ -335,23 +345,35 @@ ipcMain.on('show-search-context-menu', (event) => {
   Menu.buildFromTemplate(template).popup({ window: win })
 })
 
-ipcMain.on('open-search-url', (_, url) => {
+ipcMain.on('close-search-window', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (win && !win.isDestroyed()) {
+    win.close()
+  } else if (searchWin && !searchWin.isDestroyed()) {
+    searchWin.close()
+  }
+})
+
+ipcMain.on('open-search-url', (event, url) => {
   const mode = store.get('searchOpenMode', 'external')
 
   if (mode === 'external') {
     shell.openExternal(url)
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win && !win.isDestroyed()) win.close()
   } else if (mode === 'new') {
-    if (searchWin) searchWin.close()
+    if (searchWin && !searchWin.isDestroyed()) searchWin.close()
     createWindow(url)
-  } else if (mode === 'current' && mainWindow) {
-    mainWindow.loadURL(url)
-    mainWindow.show()
-    mainWindow.focus()
+  } else if (mode === 'current') {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL(url)
+      mainWindow.show()
+      mainWindow.focus()
+    } else {
+      mainWindow = createWindow(url)
+    }
+    if (searchWin && !searchWin.isDestroyed()) searchWin.close()
   }
-})
-
-ipcMain.on('close-search-window', () => {
-  if (searchWin) searchWin.close()
 })
 
 // ========================
@@ -369,12 +391,20 @@ function buildMenu() {
         {
           label: '在默认浏览器中打开当前页面',
           accelerator: 'CmdOrCtrl+Shift+B',
-          click: () => shell.openExternal(mainWindow?.webContents.getURL() || '')
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              shell.openExternal(mainWindow.webContents.getURL())
+            }
+          }
         },
         {
           label: '复制当前网址链接',
           accelerator: 'CmdOrCtrl+L',
-          click: () => clipboard.writeText(mainWindow?.webContents.getURL() || '')
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              clipboard.writeText(mainWindow.webContents.getURL())
+            }
+          }
         },
         { type: 'separator' },
         { label: '关闭窗口', role: 'close' },
@@ -511,13 +541,13 @@ app.whenReady().then(() => {
   buildMenu()
   createTray()
   createWindow()
-
-  // ✅ 启动时初始化更新源
   applyUpdaterFeed()
 
-  // ✅ F5 刷新
+  // F5 刷新
   globalShortcut.register('F5', () => {
-    if (mainWindow) mainWindow.webContents.reload()
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.reload()
+    }
   })
 
   // Cookie 持久化
