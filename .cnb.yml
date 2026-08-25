@@ -8,7 +8,9 @@ main:
         - name: install
           script: npm install
         - name: build
-          script: npm run build
+          script: |
+            apt-get update && apt-get install -y --no-install-recommends wine64
+            npm run dist
 
 $:
   tag_push:
@@ -23,6 +25,8 @@ $:
         - name: install
           script: npm install
         - name: build
-          script: npm run build
+          script: |
+            apt-get update && apt-get install -y --no-install-recommends wine64
+            npm run dist
         - name: sync-to-cnb-release
           script: node scripts/sync-to-cnb.mjs
