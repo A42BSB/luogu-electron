@@ -1,25 +1,28 @@
 main:
   push:
-    - stages:
+    - docker:
+        image: node:24
+      volumes:
+        - node_modules:copy-on-write
+      stages:
+        - name: install
+          script: npm install
         - name: build
-          image: node:20
-          script:
-            - npm install
-            - npm run build
-          artifacts:
-            paths:
-              - dist/**
+          script: npm run build
 
+$:
   tag_push:
-    - stages:
-        - name: build-and-release
-          image: node:20
-          env:
-            - CNB_TOKEN=${CNB_TOKEN}
-          script:
-            - npm install
-            - npm run build
-            - node scripts/upload-to-cnb.mjs
-          artifacts:
-            paths:
-              - dist/**
+    - docker:
+        image: node:24
+      env:
+        GH_TOKEN: ${GH_TOKEN}
+        CNB_TOKEN: ${CNB_TOKEN}
+      volumes:
+        - node_modules:copy-on-write
+      stages:
+        - name: install
+          script: npm install
+        - name: build
+          script: npm run build
+        - name: sync-to-cnb-release
+          script: node scripts/sync-to-cnb.mjs
