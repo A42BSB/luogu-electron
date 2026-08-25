@@ -38,10 +38,10 @@ function applyUpdaterFeed() {
       url: 'https://luogu-electron-cdn.pages.dev'
     })
   } else {
+    // 优先 CNB generic
     autoUpdater.setFeedURL({
-      provider: 'github',
-      owner: 'A42Null',
-      repo: 'luogu-electron'
+      provider: 'generic',
+      url: `https://cnb.cool/A42Null/luogu-electron/-/releases/download`
     })
   }
 }
@@ -78,7 +78,27 @@ function checkForUpdates(silent = false) {
     })
   }
 
-  autoUpdater.once('error', () => {
+  autoUpdater.once('error', (err) => {
+    const useCf = store.get('useCfMirror')
+    if (!useCf) {
+      // CNB 失败 → fallback GitHub
+      autoUpdater.setFeedURL({
+        provider: 'github',
+        owner: 'A42Null',
+        repo: 'luogu-electron'
+      })
+      autoUpdater.checkForUpdates().catch(() => {
+        if (!silent) {
+          dialog.showMessageBox({
+            type: 'error',
+            title: '检查更新失败',
+            message: '无法连接更新服务器',
+            buttons: ['确定']
+          })
+        }
+      })
+      return
+    }
     if (!silent) {
       dialog.showMessageBox({
         type: 'error',

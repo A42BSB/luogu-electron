@@ -1,0 +1,25 @@
+main:
+  push:
+    - stages:
+        - name: build
+          image: node:20
+          script:
+            - npm install
+            - npm run build
+          artifacts:
+            paths:
+              - dist/**
+
+  tag_push:
+    - stages:
+        - name: build-and-release
+          image: node:20
+          env:
+            - CNB_TOKEN=${CNB_TOKEN}
+          script:
+            - npm install
+            - npm run build
+            - node scripts/upload-to-cnb.mjs
+          artifacts:
+            paths:
+              - dist/**
